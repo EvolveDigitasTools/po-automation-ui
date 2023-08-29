@@ -30,7 +30,6 @@ export default function VendorRegistration() {
     const [msmeAttachment, setMsmeAttachment] = useState(null);
     const [tradeMark, setTradeMark] = useState("");
     const [tradeAttachment, setTradeAttachment] = useState(null);
-    const [agreement, setAgreement] = useState("");
     const [agreementAttachment, setAgreementAttachment] = useState(null);
     const [dynamicFields, setDynamicFields] = useState([]);
 
@@ -202,15 +201,8 @@ export default function VendorRegistration() {
                                         setTradeMark(e.target.value)
                                     }
                                 />
-                                <TextField
-                                    required
-                                    id="agreement"
-                                    label="Signed and Stamped Agreement by Both Parties"
-                                    value={agreement}
-                                    onChange={(e) =>
-                                        setAgreement(e.target.value)
-                                    }
-                                />
+                                <h4>Signed and Stamped Agreement by Both Parties</h4>
+                               
                             </Box>
                         </div>
                         <div className="col">
