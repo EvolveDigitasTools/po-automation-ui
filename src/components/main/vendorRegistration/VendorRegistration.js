@@ -109,7 +109,7 @@ export default function VendorRegistration() {
                                     required
                                     id="gst-attch"
                                     type="file"
-                                    className="file-first"
+                                    className="file-first file-input"
                                     onChange={(e) =>
                                         setGstAttachment(e.target.files[0])
                                     }
@@ -217,6 +217,7 @@ export default function VendorRegistration() {
                             <TextField
                                 type="file"
                                 id="msme-attch"
+                                className="file-input"
                                 onChange={(e) =>
                                     setMsmeAttachment(e.target.files[0])
                                 }
@@ -225,6 +226,7 @@ export default function VendorRegistration() {
                             <TextField
                                 type="file"
                                 id="coi-attch"
+                                className="file-input"
                                 onChange={(e) =>
                                     setCoiAttachment(e.target.files[0])
                                 }
@@ -232,6 +234,7 @@ export default function VendorRegistration() {
                             <TextField
                                 type="file"
                                 id="trade-attch"
+                                className="file-input"
                                 onChange={(e) =>
                                     setTradeAttachment(e.target.files[0])
                                 }
@@ -239,6 +242,7 @@ export default function VendorRegistration() {
                             <TextField
                                 required
                                 type="file"
+                                className="file-input"
                                 id="msme-attch"
                                 onChange={(e) =>
                                     setAgreementAttachment(e.target.files[0])
@@ -250,13 +254,19 @@ export default function VendorRegistration() {
 
                 {dynamicFields.map((field, index) => (
                     <div key={index}>
-                        <TextField
+                      <div className="row dynamic-row">
+                        <div className="col">
+                          <div className="row inner-dynamic">
+                            <div className="col">
+                            <TextField
                             required
                             label="Key"
                             value={field.key}
                             onChange={(e) => handleFieldChange(e, index, "key")}
                         />
-                        <TextField
+                            </div>
+                            <div className="col">
+                            <TextField
                             required
                             label="Value"
                             value={field.value}
@@ -264,23 +274,43 @@ export default function VendorRegistration() {
                                 handleFieldChange(e, index, "value")
                             }
                         />
-                        <TextField
+                            </div>
+                          </div>
+                        
+                        
+                        </div>
+                        <div className="col">
+                        <div className="row inner-dynamic-fab">
+                          <div className="col">
+                          <TextField
                             type="file"
+                            className="file-input"
                             onChange={(e) =>
                                 handleFieldChange(e, index, "attachment")
                             }
                         />
+                          </div>
+                        <div className="col">
                         <Fab
                             color="error"
                             aria-label="delete"
+                            className="dynamic-icon"
                             onClick={() => handleRemoveField(index)}
                         >
                             <DeleteIcon />
                         </Fab>
+                        </div>
+                       
+                        </div>
+                        </div>
+                      </div>
+                       
+                       
+                        
                     </div>
                 ))}
 
-                <Fab color="primary" aria-label="add" onClick={addNewField}>
+                <Fab color="primary" className="dynamic-icon" aria-label="add" onClick={addNewField}>
                     <AddIcon />
                 </Fab>
 

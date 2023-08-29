@@ -29,7 +29,7 @@
 .vendor-main-container .row .col{
     max-width: 50%;
     width: 50%;
-    padding: 10px 0px;
+    padding-top: 10px;
     display: block;
 }
 .vendor-main-container .row .col .MuiFormControl-root{
@@ -42,6 +42,43 @@
 #bank-attch{
     position: relative;
     left: 100px;
+}
+.dynamic-row .col{
+    padding-top: 0px!important;
+}
+.dynamic-row .col:nth-child(1){
+    width: 50%;
+    
+}
+.inner-dynamic .col{
+    padding-top: 0px;
+}
+.inner-dynamic-fab .col:nth-child(1){
+    width: 90%;
+    max-width: 90%;
+}
+.inner-dynamic-fab .col:nth-child(2){
+    width: 10%;
+    max-width: 10%;
+}
+.inner-dynamic-fab .col{
+    padding-top: 0px;
+}
+.dynamic-icon{
+    margin: 10px auto!important;
+    height: 30px!important;
+    width: 35px!important;
+}
+.dynamic-icon svg{
+    font-size: 16px;
+    width: 25px;
+    height: 25px;
+}
+
+
+.file-input .MuiInputBase-input{
+    height: 20px!important;
+    margin-bottom: 3px;
 }
 /* label[data-shrink=false]+.MuiInputBase-formControl .css-p51h6s-MuiInputBase-input-MuiOutlinedInput-input{
     padding-left: 120px;
