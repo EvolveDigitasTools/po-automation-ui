@@ -139,7 +139,6 @@ export default function VendorRegistration() {
             onChange={(e) => setTradeMark(e.target.value)}
           />
           <TextField
-            required
             type="file"
             id="trade-attch"
             onChange={(e) => setTradeAttachment(e.target.files[0])}
