@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { TextField, Box, Button, Stack } from "@mui/material";
+import { TextField, Box, Button, Stack, FormControlLabel, Checkbox } from "@mui/material";
 
 export default function VendorRegistration() {
   const [companyName, setCompanyName] = useState("");
   const [gst, setGst] = useState("");
   const [gstAttachment, setGstAttachment] = useState(null);
   const [address, setAddress] = useState("");
+  const [isInternational, setInternational] = useState(false);
   const [beneficiary, setBeneficiary] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [ifsc, setIfsc] = useState("");
@@ -52,13 +53,16 @@ export default function VendorRegistration() {
             onChange={(e) => setGstAttachment(e.target.files[0])}
           />
         </Box>
-        <TextField
-          required
-          id="address"
-          label="Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+        <Box>
+          <TextField
+            required
+            id="address"
+            label="Address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <FormControlLabel control={<Checkbox value={isInternational} onChange={(e) => setInternational(e.target.value)} />} label="Is Company International?" />
+        </Box>
         <Box>
           <TextField
             required
