@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { TextField, Box, Button, Stack, FormControlLabel, Checkbox } from "@mui/material";
+import './vendorRegistration.css';
 
 export default function VendorRegistration() {
   const [companyName, setCompanyName] = useState("");
@@ -28,7 +29,7 @@ export default function VendorRegistration() {
   };
 
   return (
-    <div>
+    <div className="vendor-main-container">
       <h1>Vendor Registration</h1>
       <Stack component="form" onSubmit={handleSubmit}>
         <TextField
