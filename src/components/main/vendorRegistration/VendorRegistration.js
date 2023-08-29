@@ -32,40 +32,61 @@ export default function VendorRegistration() {
     <div className="vendor-main-container">
       <h1>Vendor Registration</h1>
       <Stack component="form" onSubmit={handleSubmit}>
-        <TextField
-          required
-          id="company-name"
-          label="Company Name"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-        />
-        <Box>
+        <div className="company-details">
+          <h2>Compnay Details</h2>
           <TextField
-            required
-            id="gst"
-            label="GST"
-            value={gst}
-            onChange={(e) => setGst(e.target.value)}
-          />
-          <TextField
-            required
-            id="gst-attch"
-            type="file"
-            onChange={(e) => setGstAttachment(e.target.files[0])}
-          />
-        </Box>
-        <Box>
-          <TextField
-            required
-            id="address"
-            label="Address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <FormControlLabel control={<Checkbox value={isInternational} onChange={(e) => setInternational(e.target.value)} />} label="Is Company International?" />
-        </Box>
-        <Box>
-          <TextField
+                required
+                className="full-width"
+                id="company-name"
+                label="Company Name"
+                value={companyName}
+                
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+          <div className="row">
+           
+            <div className="col">
+            <TextField
+                  required
+                  id="address"
+                  label="Address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              <TextField
+                required
+                id="gst"
+                label="GST"
+                value={gst}
+                onChange={(e) => setGst(e.target.value)}
+              />
+              
+              
+            </div>
+            <div className="col">
+
+              <Box>
+               
+                <FormControlLabel control={<Checkbox value={isInternational} onChange={(e) => setInternational(e.target.value)} />} className="checkbox-first" label="Is Company International?" />
+              </Box>
+              <Box>
+
+                <TextField
+                  required
+                  id="gst-attch"
+                  type="file"
+                  className="file-first"
+                  onChange={(e) => setGstAttachment(e.target.files[0])}
+                />
+              </Box>
+            </div>
+          </div>
+        </div>
+        <div className="bank-details">
+          <h2>Bank Details</h2>
+          <div className="row">
+            <div className="col">
+            <TextField
             required
             id="beneficiary"
             label="Beneficiary Name"
@@ -79,13 +100,18 @@ export default function VendorRegistration() {
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value)}
           />
-          <TextField
+           <TextField
             required
             id="ifsc"
             label="IFSC"
             value={ifsc}
             onChange={(e) => setIfsc(e.target.value)}
           />
+          
+        
+            </div>
+            <div className="col">
+           
           <TextField
             required
             id="bank-name"
@@ -103,25 +129,24 @@ export default function VendorRegistration() {
           <TextField
             required
             type="file"
+            label="Bank Proof"
             id="bank-attch"
             onChange={(e) => setBankAttachment(e.target.files[0])}
           />
-        </Box>
-        <Box>
-          <TextField
-            required
-            id="coi"
-            label="COI"
-            value={coi}
-            onChange={(e) => setCoi(e.target.value)}
-          />
-          <TextField
-            type="file"
-            id="coi-attch"
-            onChange={(e) => setCoiAttachment(e.target.files[0])}
-          />
-        </Box>
-        <Box>
+          
+        
+            </div>
+
+
+          </div>
+
+        </div>
+        <div className="other-details">
+        <h2>Other Details</h2>
+
+        <div className="row">
+          <div className="col">
+          <Box>
           <TextField
             required
             id="msme"
@@ -129,13 +154,13 @@ export default function VendorRegistration() {
             value={msme}
             onChange={(e) => setMsme(e.target.value)}
           />
-          <TextField
-            type="file"
-            id="msme-attch"
-            onChange={(e) => setMsmeAttachment(e.target.files[0])}
+           <TextField
+            required
+            id="coi"
+            label="COI"
+            value={coi}
+            onChange={(e) => setCoi(e.target.value)}
           />
-        </Box>
-        <Box>
           <TextField
             required
             id="trade-mark"
@@ -144,26 +169,49 @@ export default function VendorRegistration() {
             onChange={(e) => setTradeMark(e.target.value)}
           />
           <TextField
-            type="file"
-            id="trade-attch"
-            onChange={(e) => setTradeAttachment(e.target.files[0])}
-          />
-        </Box>
-        <Box>
-          <TextField
             required
             id="agreement"
             label="Signed and Stamped Agreement by Both Parties"
             value={agreement}
             onChange={(e) => setAgreement(e.target.value)}
           />
+        </Box>
+     
+          </div>
+          <div className="col">
+          
           <TextField
+            type="file"
+            id="msme-attch"
+            onChange={(e) => setMsmeAttachment(e.target.files[0])}
+          />
+         
+          <TextField
+            type="file"
+            id="coi-attch"
+            onChange={(e) => setCoiAttachment(e.target.files[0])}
+          />
+          <TextField
+            type="file"
+            id="trade-attch"
+            onChange={(e) => setTradeAttachment(e.target.files[0])}
+          />
+            <TextField
             required
             type="file"
             id="msme-attch"
             onChange={(e) => setAgreementAttachment(e.target.files[0])}
           />
-        </Box>
+       
+     
+          </div>
+        </div>
+        </div>
+        
+       
+        
+        
+        
         <Button variant="contained" color="primary" type="submit">
           Submit
         </Button>
