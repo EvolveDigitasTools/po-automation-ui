@@ -180,21 +180,18 @@ export default function VendorRegistration() {
                         <div className="col">
                             <Box>
                                 <TextField
-                                    required
                                     id="msme"
                                     label="MSME"
                                     value={msme}
                                     onChange={(e) => setMsme(e.target.value)}
                                 />
                                 <TextField
-                                    required
                                     id="coi"
                                     label="COI"
                                     value={coi}
                                     onChange={(e) => setCoi(e.target.value)}
                                 />
                                 <TextField
-                                    required
                                     id="trade-mark"
                                     label="Trade Mark"
                                     value={tradeMark}
