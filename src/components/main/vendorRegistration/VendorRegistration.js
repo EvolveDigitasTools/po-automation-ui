@@ -78,7 +78,7 @@ export default function VendorRegistration() {
         for (var key of formData.entries()) {
             console.log(key[0] + ', ' + key[1]);
         }
-        fetch("http://localhost:4000/api/vendor/new", {
+        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/new`, {
             method: "POST",
             body: formData,
         })
