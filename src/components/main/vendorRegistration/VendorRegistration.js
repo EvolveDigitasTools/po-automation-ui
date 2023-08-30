@@ -32,29 +32,96 @@ export default function VendorRegistration() {
     const [tradeAttachment, setTradeAttachment] = useState(null);
     const [agreementAttachment, setAgreementAttachment] = useState(null);
     const [dynamicFields, setDynamicFields] = useState([]);
+    const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState([]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         // Do something with the form data, like sending it to a server
+        const formData = new FormData();
+
+        formData.append("companyName", companyName);
+        formData.append("gst", gst);
+        formData.append("address", address);
+        formData.append("isInternational", isInternational);
+        formData.append("beneficiary", beneficiary);
+        formData.append("accountNumber", accountNumber);
+        formData.append("ifsc", ifsc);
+        formData.append("bankName", bankName);
+        formData.append("branch", branch);
+        if(coi.length > 0)
+        formData.append("coi", coi);
+        if(msme.length > 0)
+        formData.append("msme", msme);
+        if(tradeMark.length > 0)
+        formData.append("tradeMark", tradeMark);
+        if(dynamicFields.length > 0)
+        formData.append("otherFields", JSON.stringify(dynamicFields));
+
+        // Append file attachments to formData
+        formData.append("gstAttachment", gstAttachment);
+        formData.append("bankAttachment", bankAttachment);
+        if(coiAttachment)
+        formData.append("coiAttachment", coiAttachment);
+        if(msmeAttachment)
+        formData.append("msmeAttachment", msmeAttachment);
+        if(tradeAttachment)
+        formData.append("tradeAttachment", tradeAttachment);
+        formData.append("agreementAttachment", agreementAttachment);
+        if(dynamicFields.length > 0) {
+            for (let i = 0; i < dynamicFieldsAttachments.length; i++) {
+                formData.append(`otherFieldsAttachments-${dynamicFields[i].key}`, dynamicFieldsAttachments[i]);
+            }
+        }
+    
+        // Data is valid, make an API request to send the data
+        // Example using fetch API
+        for (var key of formData.entries()) {
+            console.log(key[0] + ', ' + key[1]);
+        }
+        fetch("http://localhost:4000/api/vendor/new", {
+            method: "POST",
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("API response:", data);
+            // Handle the response as needed
+        })
+        .catch(error => {
+            console.error("API error:", error);
+            // Handle the error
+        });
     };
 
     const handleFieldChange = (e, index, fieldToUpdate) => {
         const newFields = [...dynamicFields];
-        newFields[index][fieldToUpdate] =
-            fieldToUpdate == "attachment" ? e.target.files[0] : e.target.value;
-        setDynamicFields(newFields);
+        const newFieldsAttachs = [...dynamicFieldsAttachments]
+        if(fieldToUpdate == "attachment"){
+            newFieldsAttachs[index] = e.target.files[0];
+            setDynamicFieldsAttachments(newFieldsAttachs);
+        }
+        else {
+            newFields[index][fieldToUpdate] = e.target.value;
+            setDynamicFields(newFields);
+        }
     };
 
     const addNewField = () => {
         setDynamicFields([
             ...dynamicFields,
-            { key: "", value: "", attachment: null },
+            { key: "", value: "" },
         ]);
+        setDynamicFieldsAttachments([
+            ...dynamicFieldsAttachments,
+            null
+        ])
     };
 
     const handleRemoveField = (index) => {
         const newFields = dynamicFields.filter((_, i) => i !== index);
+        const newFieldsAttachs = dynamicFieldsAttachments.filter((_, i) => i !== index)
         setDynamicFields(newFields);
+        setDynamicFieldsAttachments(newFieldsAttachs)
     };
 
     return (
@@ -256,7 +323,6 @@ export default function VendorRegistration() {
                             </div>
                             <div className="col">
                             <TextField
-                            required
                             label="Value"
                             value={field.value}
                             onChange={(e) =>
