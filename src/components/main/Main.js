@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import './Main.css';
 
 const columns = [
     { id: "vendorCode", label: "Vendor Code", minWidth: 170 },
@@ -67,7 +68,7 @@ export default function Main() {
     }
 
     function addBuyingOrder() {
-        navigate("/new-buying-order");
+        navigate(`/new-buying-order/${selectedRow}`);
     }
 
     const handleChangePage = (event, newPage) => {
@@ -88,10 +89,12 @@ export default function Main() {
 
     return (
         <div>
-            <button onClick={vendorRegistration}>Vendor Registration</button>
+            <button className="vendor-button" onClick={vendorRegistration}>Vendor Registration</button>
+            <div className="dynamic-button">
             {selectedRow != "" && <button onClick={showDetails}>Show Details</button>}
             {selectedRow != "" && <button onClick={addSKUs}>Add SKUs</button>}
             {selectedRow != "" && <button onClick={addBuyingOrder}>Add Buying Order</button>}
+            </div>
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                 <TableContainer sx={{ maxHeight: 440 }}>
                     <Table stickyHeader aria-label="sticky table">

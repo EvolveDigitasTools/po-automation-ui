@@ -1,0 +1,21 @@
+
+.css-ya3v82-MuiTable-root{
+padding: 20px;
+
+}
+.vendor-button{
+    float: right;
+    margin-right: 20px;
+    margin-top: 20px;
+    padding: 10px;
+}
+.dynamic-button{
+    position: relative;
+    display: block;
+    margin-left: 20px;
+    top: 20px;
+}
+.dynamic-button button{
+    padding: 10px;
+
+}

@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
 import { TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
+import './AddSku.css';
 
 export default function AddSKUs() {
     const params = useParams();
@@ -105,17 +106,65 @@ export default function AddSKUs() {
     return (
         <div className="new-skus">
             <h1>Add New SKUs</h1>
+            <button className="back-button">Back</button>
             <div className="vendor-info">
                 <h2>Vendor Details</h2>
+                <div className="row">
+                    <div className="col">
+                    <TextField
+                    disabled
+                    id="vendor-code"
+                    label="Vendor Code"
+                    value={"Vendor Code"}
+                    fullWidth
+                />
                 <TextField
                     disabled
                     id="company-name"
                     label="Company Name"
-                    value={"companyName"}
+                    value={"Company Name"}
                     fullWidth
                 />
+                   <TextField
+                    disabled
+                    id="state"
+                    label="State"
+                    value={"State"}
+                    fullWidth
+                />
+                    </div>
+                    <div className="col">
+                    <TextField
+                    disabled
+                    id="country"
+                    label="Country"
+                    value={"Country"}
+                    fullWidth
+                />
+                <TextField
+                    disabled
+                    id="product-category"
+                    label="Product Category"
+                    value={"Product Category"}
+                    fullWidth
+                />
+                <button className="download-button" onClick={handleDownload}>Download Sample SKU Excel</button>
+            
+                    </div>
+                </div>
+                <div className="excel-section">
+                <h2>Upload SKU Details</h2>
+                </div>
+                
+                <TextField
+                     type="file"
+                     id="file-input"
+                    className="file-input"
+                     accept=".xlsx"
+                     onChange={handleFileChange}
+                />
             </div>
-            <input type="file" accept=".xlsx" onChange={handleFileChange} />
+            
             <Typography variant="h6">Excel Data:</Typography>
             <pre>{JSON.stringify(excelData, null, 2)}</pre>
             <button onClick={handleDownload}>Download Sample SKU Excel</button>
