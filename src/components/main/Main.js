@@ -67,7 +67,7 @@ export default function Main() {
     }
 
     function addBuyingOrder() {
-        navigate("/new-buying-order");
+        navigate(`/new-buying-order/${selectedRow}`);
     }
 
     const handleChangePage = (event, newPage) => {
