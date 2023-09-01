@@ -1,0 +1,30 @@
+.new-skus{
+    padding: 40px;
+}
+.new-skus .row .col{
+    max-width: 50%;
+    width: 50%;
+    padding-top: 10px;
+    display: block;
+}
+.new-skus .row .col:nth-child(2){
+   margin-left: 10px;
+}
+.back-button{
+    
+  
+    padding: 10px;
+}
+.new-skus .row{
+    display: flex;
+}
+.new-skus .MuiInputBase-root{
+margin-bottom: 15px;
+}
+.file-input{
+    width: 100%;
+}
+.download-button{
+    padding: 19px;
+    width: 100%;
+}
