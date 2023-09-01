@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
 import { TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import './AddSku.css';
+import "./AddSku.css";
 
 export default function AddSKUs() {
     const params = useParams();
@@ -85,22 +85,53 @@ export default function AddSKUs() {
     };
 
     const handleFileChange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-  
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(file);
-  
-      const worksheet = workbook.getWorksheet(1);
-      const parsedData = [];
-  
-      worksheet.eachRow((row) => {
-        parsedData.push(row.values);
-      });
-      const keys = []
-      parsedData[0].splice(1).forEach(key => keys.push(key))
-      console.log(keys)
-      setExcelData(parsedData);
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(file);
+
+        const worksheet = workbook.getWorksheet(1);
+        const parsedData = [];
+
+        worksheet.eachRow((row) => {
+            parsedData.push(row.values);
+        });
+
+        const keys = ['skuCode', 'category', 'brand', 'productTitle', 'hsn', 'ean', 'modelNumber', 'size', 'colorFamilyColor', 'productLengthCm', 'productBreadthCm', 'productHeightCm', 'productWeightKg', 'masterCartonQty', 'masterCartonLengthCm', 'masterCartonBreadthCm', 'masterCartonHeightCm', 'masterCartonWeightKg', 'MRP', 'vendorCode'];
+        for (let i = 1; i < parsedData.length; i++) {
+            const row = parsedData[i].slice(1);
+            console.log("row", i, row);
+            // Do something with the form data, like sending it to a server
+            const formData = new FormData();
+
+            for (let i = 0; i < row.length; i++) {
+                const value = row[i];
+                if(value)
+                formData.append(keys[i], value);
+            }
+            formData.append('vendorCode',vendorCode)
+
+            // Data is valid, make an API request to send the data
+            // Example using fetch API
+            for (var key of formData.entries()) {
+                console.log(key[0] + ", " + key[1]);
+            }
+            fetch(`${process.env.REACT_APP_SERVER_URL}sku/new`, {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log("API response:", data);
+                    // Handle the response as needed
+                })
+                .catch((error) => {
+                    console.error("API error:", error);
+                    // Handle the error
+                });
+        }
+        setExcelData(parsedData);
     };
 
     return (
@@ -111,60 +142,64 @@ export default function AddSKUs() {
                 <h2>Vendor Details</h2>
                 <div className="row">
                     <div className="col">
-                    <TextField
-                    disabled
-                    id="vendor-code"
-                    label="Vendor Code"
-                    value={"Vendor Code"}
-                    fullWidth
-                />
-                <TextField
-                    disabled
-                    id="company-name"
-                    label="Company Name"
-                    value={"Company Name"}
-                    fullWidth
-                />
-                   <TextField
-                    disabled
-                    id="state"
-                    label="State"
-                    value={"State"}
-                    fullWidth
-                />
+                        <TextField
+                            disabled
+                            id="vendor-code"
+                            label="Vendor Code"
+                            value={"Vendor Code"}
+                            fullWidth
+                        />
+                        <TextField
+                            disabled
+                            id="company-name"
+                            label="Company Name"
+                            value={"Company Name"}
+                            fullWidth
+                        />
+                        <TextField
+                            disabled
+                            id="state"
+                            label="State"
+                            value={"State"}
+                            fullWidth
+                        />
                     </div>
                     <div className="col">
-                    <TextField
-                    disabled
-                    id="country"
-                    label="Country"
-                    value={"Country"}
-                    fullWidth
-                />
-                <TextField
-                    disabled
-                    id="product-category"
-                    label="Product Category"
-                    value={"Product Category"}
-                    fullWidth
-                />
-                <button className="download-button" onClick={handleDownload}>Download Sample SKU Excel</button>
-            
+                        <TextField
+                            disabled
+                            id="country"
+                            label="Country"
+                            value={"Country"}
+                            fullWidth
+                        />
+                        <TextField
+                            disabled
+                            id="product-category"
+                            label="Product Category"
+                            value={"Product Category"}
+                            fullWidth
+                        />
+                        <button
+                            className="download-button"
+                            onClick={handleDownload}
+                        >
+                            Download Sample SKU Excel
+                        </button>
                     </div>
                 </div>
                 <div className="excel-section">
-                <h2>Upload SKU Details</h2>
+                    <h2>Upload SKU Details</h2>
                 </div>
-                
+
                 <TextField
-                     type="file"
-                     id="file-input"
+                    type="file"
+                    id="file-input"
                     className="file-input"
-                     accept=".xlsx"
-                     onChange={handleFileChange}
+                    accept=".xlsx"
+                    onChange={handleFileChange}
                 />
             </div>
-            
+
             <Typography variant="h6">Excel Data:</Typography>
             <pre>{JSON.stringify(excelData, null, 2)}</pre>
             <button onClick={handleDownload}>Download Sample SKU Excel</button>
