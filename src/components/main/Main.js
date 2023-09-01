@@ -14,8 +14,9 @@ import { useNavigate } from "react-router-dom";
 const columns = [
     { id: "vendorCode", label: "Vendor Code", minWidth: 170 },
     { id: "companyName", label: "Company Name", minWidth: 170 },
-    // { id: "gst", label: "GST", minWidth: 170 },
-    // { id: "address", label: "Address", minWidth: 170 },
+    { id: "state", label: "State", minWidth: 170 },
+    { id: "country", label: "Country", minWidth: 170 },
+    { id: "productCategory", label: "Product Category", minWidth: 170}
     // { id: "beneficiary", label: "Beneficiary Name", minWidth: 170 },
     // { id: "accountNumber", label: "Account Number", minWidth: 170 },
     // { id: "ifsc", label: "IFSC", minWidth: 170 },

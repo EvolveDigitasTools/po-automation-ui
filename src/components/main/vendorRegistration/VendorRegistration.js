@@ -18,6 +18,7 @@ export default function VendorRegistration() {
     const [contactPersonName, setContactPersonName] = useState("");
     const [contactPersonEmail, setContactPersonEmail] = useState("");
     const [contactPersonPhone, setContactPersonPhone] = useState("");
+    const [productCategory, setProductCategory] = useState("");
     const [gst, setGst] = useState("");
     const [gstAttachment, setGstAttachment] = useState(null);
     const [addressLine1, setAddressLine1] = useState("");
@@ -40,12 +41,11 @@ export default function VendorRegistration() {
     const [tradeAttachment, setTradeAttachment] = useState(null);
     const [agreementAttachment, setAgreementAttachment] = useState(null);
     const [dynamicFields, setDynamicFields] = useState([]);
-    const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState(
-        []
-    );
+    const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState([]);
     const [countries, setCountries] = useState([]);
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
+    const categories = ['Electronics & Mobiles', 'Appliances', 'Sports & Outdoors', 'Fashion & Apparel', 'Pet Supplies', 'Health & Welness', 'Baby Products', 'Beauty & Personal Care', 'Grocery'];
 
     //ComponentDidMount
     useEffect(() => {
@@ -139,7 +139,10 @@ export default function VendorRegistration() {
             .then((response) => response.json())
             .then((data) => {
                 setState(newValue);
+                if(data.length > 0)
                 setCities(data.map((cityObject) => cityObject.city_name));
+                else
+                setCities(['Not Applicable']);
                 setCity(null);
             })
             .catch((error) => {
@@ -153,7 +156,18 @@ export default function VendorRegistration() {
         const formData = new FormData();
 
         formData.append("companyName", companyName);
+        formData.append("contactPersonName", contactPersonName);
+        formData.append("contactPersonEmail", contactPersonEmail);
+        formData.append("contactPersonPhone", contactPersonPhone);
+        formData.append("productCategory", productCategory);
         formData.append("gst", gst);
+        formData.append("addressLine1", addressLine1);
+        if(addressLine2)
+        formData.append("addressLine2", addressLine2);
+        formData.append("country", country.country_name);
+        formData.append("state", state);
+        formData.append("city", city);
+        formData.append("postalCode", postalCode);
         formData.append("beneficiary", beneficiary);
         formData.append("accountNumber", accountNumber);
         formData.append("ifsc", ifsc);
@@ -234,21 +248,42 @@ export default function VendorRegistration() {
             <Stack component="form" onSubmit={handleSubmit}>
                 <div className="company-details">
                     <h2>Compnay Details</h2>
+                    <TextField
+                        required
+                        id="company-name"
+                        label="Company Name"
+                        value={companyName}
+                        fullWidth
+                        onChange={(e) => setCompanyName(e.target.value)}
+                    />
                     <div className="row">
                         <div className="col">
-                            <TextField
-                                required
-                                id="company-name"
-                                label="Company Name"
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
+                            <Autocomplete
+                                disablePortal
+                                id="category"
+                                options={categories}
+                                renderInput={(params) => (
+                                    <TextField
+                                        required
+                                        {...params}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password",
+                                            style: { width: "auto" },
+                                        }}
+                                        label="Category"
+                                    />
+                                )}
+                                value={productCategory}
+                                onChange={(e, newValue) => setProductCategory(newValue)}
                             />
                             <TextField
                                 required
-                                id="contact-person-name"
-                                label="Contact Person Name"
-                                value={contactPersonName}
-                                onChange={(e) => setContactPersonName(e.target.value)}
+                                id="contact-person-email"
+                                label="Contact Person Email"
+                                type="email"
+                                value={contactPersonEmail}
+                                onChange={(e) => setContactPersonEmail(e.target.value)}
                             />
                             <TextField
                                 required
@@ -261,10 +296,10 @@ export default function VendorRegistration() {
                         <div className="col">
                             <TextField
                                 required
-                                id="contact-person-email"
-                                label="Contact Person Email"
-                                value={contactPersonEmail}
-                                onChange={(e) => setContactPersonEmail(e.target.value)}
+                                id="contact-person-name"
+                                label="Contact Person Name"
+                                value={contactPersonName}
+                                onChange={(e) => setContactPersonName(e.target.value)}
                             />
                             <TextField
                                 required
