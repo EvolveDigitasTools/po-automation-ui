@@ -89,12 +89,21 @@ export default function Main() {
 
     return (
         <div>
-            <button className="vendor-button" onClick={vendorRegistration}>Vendor Registration</button>
-            <div className="dynamic-button">
+            <div className="row">
+                <div className="col">
+                <div className="dynamic-button">
             {selectedRow != "" && <button onClick={showDetails}>Show Details</button>}
             {selectedRow != "" && <button onClick={addSKUs}>Add SKUs</button>}
             {selectedRow != "" && <button onClick={addBuyingOrder}>Add Buying Order</button>}
             </div>
+                </div>
+                <div className="col">
+                <button className="vendor-button" onClick={vendorRegistration}>Vendor Registration</button>
+
+                </div>
+            </div>
+            
+          
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                 <TableContainer sx={{ maxHeight: 440 }}>
                     <Table stickyHeader aria-label="sticky table">

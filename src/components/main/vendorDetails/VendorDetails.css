@@ -1,0 +1,98 @@
+.vendor-main-container{
+    width: 80%;
+    margin: 3% auto;
+}
+.vendor-main-container .css-yjsfm1{
+    height: 20px;
+    color:#fff!important;
+}
+.vendor-main-container .row{
+    display: flex;
+}
+.full-width{
+    width: 100%;
+}
+.full-width-button{
+    width: 100%;
+    margin-top: 5px!important;
+    height: 50px;
+}
+.checkbox-first{
+    margin-bottom: 15px;
+}
+.file-first .MuiInputBase-input{
+    padding: 14px;
+    margin-top: 4px;
+}
+.vendor-main-container .row .col:nth-child(1){
+    margin-right: 10px;
+}
+.other-details .row .col:nth-child(1){
+    margin-right: 10px;
+    padding-top: 5px;
+}
+.vendor-main-container .row .col{
+    max-width: 50%;
+    width: 50%;
+    padding-top: 10px;
+    
+    display: block;
+}
+.other-details .row .col{
+    max-width: 50%;
+    width: 50%;
+    padding-top: 5px;
+    display: block;
+}
+.vendor-main-container .row .col .MuiFormControl-root{
+    display: block;
+    width: 100%;
+}
+.vendor-main-container .row .col .MuiFormControl-root .MuiInputBase-root{
+    display: block;
+}
+#bank-attch{
+    position: relative;
+    left: 100px;
+}
+.dynamic-row .col{
+    padding-top: 0px!important;
+}
+.dynamic-row .col:nth-child(1){
+    width: 50%;
+    
+}
+.inner-dynamic .col{
+    padding-top: 0px;
+}
+.inner-dynamic-fab .col:nth-child(1){
+    width: 90%;
+    max-width: 90%;
+}
+.inner-dynamic-fab .col:nth-child(2){
+    width: 10%;
+    max-width: 10%;
+}
+.inner-dynamic-fab .col{
+    padding-top: 0px;
+}
+.dynamic-icon{
+    margin: 10px auto!important;
+    height: 30px!important;
+    width: 35px!important;
+}
+.dynamic-icon svg{
+    font-size: 16px;
+    width: 25px;
+    height: 25px;
+}
+
+
+.file-input .MuiInputBase-input{
+    height: 20px!important;
+    margin-bottom: 3px;
+}
+/* label[data-shrink=false]+.MuiInputBase-formControl .css-p51h6s-MuiInputBase-input-MuiOutlinedInput-input{
+    padding-left: 120px;
+    font-size: 14px!important;
+} */
