@@ -10,6 +10,85 @@ import {
 import { useEffect, useState } from "react";
 import "./ADDBuying.css";
 
+function convertToIndianNumber(num) {
+    // Arrays for Indian numbering system
+    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  
+    // Function to convert a number less than 100 to words
+    function convertLessThanHundred(number) {
+      if (number < 20) {
+        return ones[number];
+      } else {
+        const ten = Math.floor(number / 10);
+        const one = number % 10;
+        return tens[ten] + " " + ones[one];
+      }
+    }
+  
+    // Function to convert a number to words
+    function convertToWords(number) {
+      if (number === 0) return "zero";
+      
+      const crore = Math.floor(number / 10000000);
+      const lakh = Math.floor((number % 10000000) / 100000);
+      const thousand = Math.floor((number % 100000) / 1000);
+      const hundred = Math.floor((number % 1000) / 100);
+      const remaining = number % 100;
+  
+      let result = "";
+      
+      if (crore > 0) {
+        result += convertLessThanHundred(crore) + " Crore ";
+      }
+  
+      if (lakh > 0) {
+        result += convertLessThanHundred(lakh) + " Lakh ";
+      }
+  
+      if (thousand > 0) {
+        result += convertLessThanHundred(thousand) + " Thousand ";
+      }
+  
+      if (hundred > 0) {
+        result += convertLessThanHundred(hundred) + " Hundred ";
+      }
+  
+      if (remaining > 0) {
+        result += convertLessThanHundred(remaining);
+      }
+  
+      return result.trim();
+    }
+  
+    // Split the number into its integer and decimal parts
+    const integerPart = Math.floor(num);
+    const decimalPart = Math.round((num - integerPart) * 100);
+  
+    // Convert the integer part to words
+    let integerWords = convertToWords(integerPart);
+  
+    // Convert the decimal part to words
+    let decimalWords = "";
+    if (decimalPart > 0) {
+      decimalWords = "and " + convertLessThanHundred(decimalPart) + " Paise";
+    }
+  
+    // Combine integer and decimal parts
+    let result = integerWords + " Rupees ";
+    if (decimalWords !== "") {
+      result += decimalWords;
+    }
+  
+    return result;
+  }
+  
+  // Example usage:
+  const number = 123456789.99;
+  const textNumber = convertToIndianNumber(number);
+  console.log(textNumber); // Output: "twelve crore thirty-four lakh fifty-six thousand seven hundred eighty-nine rupees and ninety-nine paise"
+  
+
 export default function AddBuyingOrder() {
     const params = useParams();
     const vendorCode = params.vendorCode;
@@ -262,13 +341,13 @@ export default function AddBuyingOrder() {
             [
                 "",
                 "Bill To :",
-                "Noida, FC – 2 & 4, Film City, Sector 16A, Noida, Uttar Pradesh 201301",
+                "Ansan Technologies Pvt Ltd\nFC - 2 & 4, Film City Sector-16, Noida, UP-201301",
                 "",
                 "",
                 "",
                 "",
                 "Ship To :",
-                "Noida, FC – 2 & 4, Film City, Sector 16A, Noida, Uttar Pradesh 201301",
+                "Shree Maruti Courier Pvt. Ltd O/B Ansan Technology Pvt Ltd.\nPlot no. 25-5/2, Rao giriraj Singh  Retail Park Opp. Om logistics Near  Iffco chowk Sec. 18 Gurgaon, HR-122015",
             ],
             [
                 "",
@@ -323,11 +402,11 @@ export default function AddBuyingOrder() {
                 skus[records[i].skuCode].colorFamilyColor,
                 records[i].expectedQty,
                 records[i].unitCost,
-                isInterState ? '0%': records[i].gst+'%',
+                isInterState ? 0: records[i].gst/100,
                 igst,
-                isInterState ? records[i].gst/2+'%' : '0%',
+                isInterState ? records[i].gst/200 : 0,
                 sgst,
-                isInterState ? records[i].gst/2+'%' : '0%',
+                isInterState ? records[i].gst/200 : 0,
                 sgst,
                 records[i].expectedQty * records[i].unitCost,
             ]);
@@ -335,7 +414,7 @@ export default function AddBuyingOrder() {
         data.splice(13 + records.length, 0, 
             ["", `Sub Total (${currency})`, "", "", "", "", "", "", "", "", totalQty, "", "", totalIgst, "", totalSgst, "", totalSgst, totalAmount],
             ["", `GST`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", totalIgst + totalSgst*2],
-            ["", `Grand Total (${currency})`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", totalIgst + totalSgst*2 + totalAmount],
+            ["", `Grand Total (${currency}) - ${convertToIndianNumber(totalIgst + totalSgst*2 + totalAmount)}`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", totalIgst + totalSgst*2 + totalAmount],
             ["", "This is a digital PO and doesn't require Authorised Signatory", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ["", "Requested by :", "", vendor.contactPerson.email, "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ["", "Terms & Conditions", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
@@ -353,8 +432,8 @@ export default function AddBuyingOrder() {
             8.36, 6.55, 7.18, 7.36, 7.64, 8.55, 8.55, 9.36,
         ];
         const rowStartHeights = [
-            15.0, 26.3, 15.0, 15.0, 17.3, 17.3, 15.8, 18.0, 18.0, 19.5, 19.5,
-            22.5, 27.8,
+            15.0, 26.3, 15.0, 15.0, 30, 17.3, 15.8, 18.0, 18.0, 19.5, 19.5,
+            30, 27.8,
         ];
         const rowEndHeights = [13.0, 13.0, 13.0, 13.0, 14.2, 14.2, 60.0, 60.0]
 
@@ -415,7 +494,7 @@ export default function AddBuyingOrder() {
         for (let row = startCell.row; row <= endCell.row; row++) {
             const cell = poSheet.getCell(row, startCell.col);
             cell.style = {
-                alignment: { vertical: "middle" },
+                alignment: { vertical: "middle", horizontal: "left", wrapText: true },
                 fill: {
                     type: "pattern",
                     pattern: "solid",
@@ -482,7 +561,7 @@ export default function AddBuyingOrder() {
         for (let col = startCell.col; col <= endCell.col; col++) {
             const cell = poSheet.getCell(startCell.row, col);
             cell.style = {
-                alignment: { vertical: "middle" },
+                alignment: { vertical: "middle", wrapText: true },
                 font: { color: { argb: "C00000 " } },
                 fill: {
                     type: "pattern",
@@ -499,7 +578,7 @@ export default function AddBuyingOrder() {
         }
 
         poSheet.getCell("H12").style = {
-            alignment: { vertical: "middle" },
+            alignment: { vertical: "middle", wrapText: true },
             font: { bold: true },
             fill: {
                 type: "pattern",
@@ -587,6 +666,33 @@ export default function AddBuyingOrder() {
             }
         }
 
+        if(isInterState) {
+            startCell = poSheet.getCell("O14");
+            endCell = poSheet.getCell(`O${13+records.length}`);
+
+            for (let row = startCell.row; row <= endCell.row; row++) {
+                const cell = poSheet.getCell(row, startCell.col);
+                cell.numFmt = '0%';
+            }
+
+            startCell = poSheet.getCell("Q14");
+            endCell = poSheet.getCell(`Q${13+records.length}`);
+
+            for (let row = startCell.row; row <= endCell.row; row++) {
+                const cell = poSheet.getCell(row, startCell.col);
+                cell.numFmt = '0%';
+            }
+        }
+        else {
+            startCell = poSheet.getCell("M14");
+            endCell = poSheet.getCell(`M${13+records.length}`);
+
+            for (let row = startCell.row; row <= endCell.row; row++) {
+                const cell = poSheet.getCell(row, startCell.col);
+                cell.numFmt = '0%';
+            }
+        }
+
         startCell = poSheet.getCell(`B${14+records.length}`);
         endCell = poSheet.getCell(`S${14+records.length}`);
 
@@ -631,6 +737,11 @@ export default function AddBuyingOrder() {
               const cell = poSheet.getCell(row, col);
               cell.style = {
                 alignment: { vertical: "middle", horizontal: 'left' },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F2F2F2" },
+                },
                 border: {
                     top: { style: "thin" },
                     left: { style: cell.col == 2 ? "medium" : "thin" },
@@ -650,6 +761,11 @@ export default function AddBuyingOrder() {
               cell.style = {
                 alignment: { vertical: "middle", horizontal: 'left', wrapText: true },
                 font: { bold: row == startCell.row ? true : false },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F2F2F2" },
+                },
                 border: {
                     top: { style: "thin" },
                     left: { style: cell.col == 2 ? "medium" : "thin" },
