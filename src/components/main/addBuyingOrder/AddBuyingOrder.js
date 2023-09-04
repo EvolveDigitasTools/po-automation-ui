@@ -242,7 +242,7 @@ export default function AddBuyingOrder() {
                 "",
                 "",
                 "BU :",
-                "Pluugin",
+                "Pluugin E-Commerce",
             ],
             [
                 "",
@@ -270,7 +270,7 @@ export default function AddBuyingOrder() {
                 "",
                 "",
                 "BM :",
-                "E-Commerce",
+                "Retail",
             ],
             [
                 "",
@@ -389,6 +389,7 @@ export default function AddBuyingOrder() {
                 totalIgst += igst;
             }
             totalAmount += records[i].expectedQty * records[i].unitCost;
+            totalQty += records[i].expectedQty;
             data.splice(13 + i, 0, [
                 "",
                 i + 1,
@@ -599,7 +600,7 @@ export default function AddBuyingOrder() {
         for (let col = startCell.col; col <= endCell.col; col++) {
             const cell = poSheet.getCell(startCell.row, col);
             cell.style = {
-                alignment: { vertical: "middle" },
+                alignment: { vertical: "middle", wrapText: true },
                 font: { color: { argb: "C00000 " } },
                 fill: {
                     type: "pattern",
