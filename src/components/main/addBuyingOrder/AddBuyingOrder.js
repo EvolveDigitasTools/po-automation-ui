@@ -13,6 +13,7 @@ import "./ADDBuying.css";
 export default function AddBuyingOrder() {
     const params = useParams();
     const vendorCode = params.vendorCode;
+    const [vendor, setVendor] = useState(null);
     const [excelData, setExcelData] = useState([]);
     const [currency, setCurrency] = useState("INR");
     const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
@@ -22,6 +23,15 @@ export default function AddBuyingOrder() {
 
     //ComponentDidMount
     useEffect(() => {
+        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`)
+            .then((response) => response.json())
+            .then((res) => {
+                setVendor(res.data.vendor);
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+                // Handle the error
+            });
         return () => {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
@@ -144,12 +154,22 @@ export default function AddBuyingOrder() {
         const data = [
             [],
             ["", "Ansan Technologies Pvt Ltd"],
-            ["", "Partner Name :", "", "XYZ", "", "", "", "BU :", "Pluugin"],
+            [
+                "",
+                "Partner Name :",
+                "",
+                vendor.companyName,
+                "",
+                "",
+                "",
+                "BU :",
+                "Pluugin",
+            ],
             [
                 "",
                 "Partner Code :",
                 "",
-                "PEXYZ",
+                vendorCode,
                 "",
                 "",
                 "",
@@ -160,7 +180,13 @@ export default function AddBuyingOrder() {
                 "",
                 "Partner Address :",
                 "",
-                "XYZ",
+                `${vendor.address.addressLine1}, ${
+                    vendor.address.addressLine2
+                        ? vendor.address.addressLine2 + ", "
+                        : ""
+                }${vendor.address.city}, ${vendor.address.state}-${
+                    vendor.address.postalCode
+                }`,
                 "",
                 "",
                 "",
@@ -171,7 +197,7 @@ export default function AddBuyingOrder() {
                 "",
                 "Contact Person :",
                 "",
-                "XYZ",
+                vendor.contactPerson.name,
                 "",
                 "",
                 "",
@@ -182,7 +208,7 @@ export default function AddBuyingOrder() {
                 "",
                 "Contact No :",
                 "",
-                "XYZ",
+                Number(vendor.contactPerson.phoneNumber),
                 "",
                 "",
                 "",
@@ -198,25 +224,35 @@ export default function AddBuyingOrder() {
                 "",
                 "",
                 "Buyer :",
-                "XYZ - Email",
+                vendor.contactPerson.email,
             ],
-            ["", "GST No:", "", "XYZ", "", "", "", "GST No:", "XYZ"],
+            [
+                "",
+                "GST No:",
+                "",
+                vendor.gst,
+                "",
+                "",
+                "",
+                "GST No:",
+                "09AAQCA1249N1Z4",
+            ],
             [
                 "",
                 "State Name and Code:",
                 "",
-                "XYZ",
+                vendor.address.state,
                 "",
                 "",
                 "",
                 "State Name and Code:",
-                "XYZ",
+                "Uttar Pradesh UP",
             ],
             [
                 "",
                 "Estimated Delivery Date :",
                 "",
-                "XYZ",
+                estimatedDeliveryDate,
                 "",
                 "",
                 "",
@@ -257,36 +293,372 @@ export default function AddBuyingOrder() {
             ],
         ];
 
+        const skus = {}
+        vendor.skus.forEach(sku => {
+            skus[sku.skuCode] = sku;
+        });
+        let totalQty = 0, totalIgst = 0, totalSgst = 0, totalAmount = 0;
+        const isInterState = vendor.address.state != "Uttar Pradesh"
         for (let i = 0; i < records.length; i++) {
+            let igst = 0, sgst = 0;
+            if(isInterState){
+                sgst = records[i].expectedQty * records[i].unitCost * records[i].gst / 200;
+                totalSgst += sgst;
+            }
+            else {
+                igst = records[i].expectedQty * records[i].unitCost * records[i].gst / 100;
+                totalIgst += igst;
+            }
+            totalAmount += records[i].expectedQty * records[i].unitCost;
             data.splice(13 + i, 0, [
-                "", 
+                "",
                 i + 1,
                 records[i].skuCode,
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
+                skus[records[i].skuCode].productTitle,
+                Number(skus[records[i].skuCode].ean),
+                skus[records[i].skuCode].modelNumber,
+                skus[records[i].skuCode].category,
+                skus[records[i].skuCode].brand,
+                skus[records[i].skuCode].size,
+                skus[records[i].skuCode].colorFamilyColor,
                 records[i].expectedQty,
                 records[i].unitCost,
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                records[i].expectedQty*records[i].unitCost
+                isInterState ? '0%': records[i].gst+'%',
+                igst,
+                isInterState ? records[i].gst/2+'%' : '0%',
+                sgst,
+                isInterState ? records[i].gst/2+'%' : '0%',
+                sgst,
+                records[i].expectedQty * records[i].unitCost,
             ]);
         }
+        data.splice(13 + records.length, 0, 
+            ["", `Sub Total (${currency})`, "", "", "", "", "", "", "", "", totalQty, "", "", totalIgst, "", totalSgst, "", totalSgst, totalAmount],
+            ["", `GST`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", totalIgst + totalSgst*2],
+            ["", `Grand Total (${currency})`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", totalIgst + totalSgst*2 + totalAmount],
+            ["", "This is a digital PO and doesn't require Authorised Signatory", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "Requested by :", "", vendor.contactPerson.email, "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "Terms & Conditions", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "1. Please send a copy of invoice & PO along with stock.\n2. Please Mention the PO no. on invoice.\n3. Freight Charges are not included.\n4. Multiple invoices for a single PO will not be entertained", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "In relation to products purchased under this PO, the seller agrees to be liable and indemnify Pluugin E-Commerce against any losses, damages and/or expenses arising out of or relating to: \na) any defects or damage to a product that occurred prior to acceptance of the product by Pluugin E-Commerce, or after acceptance with respect to latent deficiencies;\nb) any third party claims, including governmental and regulatory claims, investigations or similar, regarding use of the products; or c) a breach of any applicable law.", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+        )
 
         // Add data to the worksheet
         data.forEach((row) => {
             poSheet.addRow(row);
         });
 
+        const columnWidths = [
+            6.36, 16.82, 35.55, 14.91, 14.82, 9.09, 18.64, 7.09, 16.09, 6.55,
+            8.36, 6.55, 7.18, 7.36, 7.64, 8.55, 8.55, 9.36,
+        ];
+        const rowStartHeights = [
+            15.0, 26.3, 15.0, 15.0, 17.3, 17.3, 15.8, 18.0, 18.0, 19.5, 19.5,
+            22.5, 27.8,
+        ];
+        const rowEndHeights = [13.0, 13.0, 13.0, 13.0, 14.2, 14.2, 60.0, 60.0]
+
+        for (let i = 2; i <= columnWidths.length + 1; i++)
+            poSheet.getColumn(i).width = columnWidths[i - 2] + 0.64;
+        for (let i = 1; i <= rowStartHeights.length; i++)
+            poSheet.getRow(i).height = rowStartHeights[i - 1] * 1.5;
+        for (let i = 0; i <= records.length; i++)
+            poSheet.getRow(14+i).height = 16.5 * 1.5;
+        for (let i = 0; i <= rowEndHeights.length; i++)
+            poSheet.getRow(14+records.length+i).height = rowEndHeights[i] * 1.5;
+
         poSheet.mergeCells("B2", "S2");
+
+        let startCell = poSheet.getCell("B2");
+        let endCell = poSheet.getCell("S2");
+
+        for (let col = startCell.col; col <= endCell.col; col++) {
+            const cell = poSheet.getCell(startCell.row, col);
+            cell.style = {
+                alignment: { horizontal: "center", vertical: "middle" },
+                font: { bold: true },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "FFA500" },
+                },
+                border: {
+                    top: { style: "medium" },
+                    left: { style: "medium" },
+                    bottom: { style: "medium" },
+                    right: { style: "medium" },
+                },
+            };
+        }
+
+        startCell = poSheet.getCell("B3");
+        endCell = poSheet.getCell("B11");
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            const cell = poSheet.getCell(row, startCell.col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                font: { bold: true },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+                border: {
+                    left: { style: "medium" },
+                },
+            };
+        }
+        startCell = poSheet.getCell("D3");
+        endCell = poSheet.getCell("D11");
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            const cell = poSheet.getCell(row, startCell.col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+            };
+        }
+
+        startCell = poSheet.getCell("H3");
+        endCell = poSheet.getCell("H11");
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            const cell = poSheet.getCell(row, startCell.col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                font: { bold: true },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+                border: {
+                    left: { style: "thin" },
+                },
+            };
+        }
+        startCell = poSheet.getCell("I3");
+        endCell = poSheet.getCell("I11");
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            const cell = poSheet.getCell(row, startCell.col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+                border: {
+                    right: { style: "medium" },
+                },
+            };
+        }
+
+        poSheet.getCell("B12").style = {
+            alignment: { vertical: "middle" },
+            font: { bold: true },
+            fill: {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "F9FB9B" },
+            },
+            border: {
+                top: { style: "thin" },
+                left: { style: "medium" },
+                right: { style: "thin" },
+                bottom: { style: "thin" },
+            },
+        };
+
+        startCell = poSheet.getCell("C12");
+        endCell = poSheet.getCell("G12");
+
+        for (let col = startCell.col; col <= endCell.col; col++) {
+            const cell = poSheet.getCell(startCell.row, col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                font: { color: { argb: "C00000 " } },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: "thin" },
+                    right: { style: "thin" },
+                    bottom: { style: "thin" },
+                },
+            };
+        }
+
+        poSheet.getCell("H12").style = {
+            alignment: { vertical: "middle" },
+            font: { bold: true },
+            fill: {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "F9FB9B" },
+            },
+            border: {
+                top: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "thin" },
+                bottom: { style: "thin" },
+            },
+        };
+
+        startCell = poSheet.getCell("I12");
+        endCell = poSheet.getCell("R12");
+
+        for (let col = startCell.col; col <= endCell.col; col++) {
+            const cell = poSheet.getCell(startCell.row, col);
+            cell.style = {
+                alignment: { vertical: "middle" },
+                font: { color: { argb: "C00000 " } },
+                fill: {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "F9FB9B" },
+                },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: "thin" },
+                    right: { style: "medium" },
+                    bottom: { style: "thin" },
+                },
+            };
+        }
+
+        poSheet.getCell("S12").style = {
+            alignment: { vertical: "middle" },
+            font: { color: { argb: "C00000 " } },
+            fill: {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "F9FB9B" },
+            },
+            border: {
+                top: { style: "thin" },
+                left: { style: "thin" },
+                right: { style: "medium" },
+                bottom: { style: "thin" },
+            },
+        };
+
+        startCell = poSheet.getCell("B13");
+        endCell = poSheet.getCell("S13");
+
+        for (let col = startCell.col; col <= endCell.col; col++) {
+            const cell = poSheet.getCell(startCell.row, col);
+            cell.style = {
+                alignment: { vertical: "middle", horizontal: 'center', wrapText: true },
+                font: { bold: true },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: "thin" },
+                },
+            };
+        }
+
+        startCell = poSheet.getCell("B14");
+        endCell = poSheet.getCell(`S${13+records.length}`);
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            for (let col = startCell.col; col <= endCell.col; col++) {
+              const cell = poSheet.getCell(row, col);
+              cell.style = {
+                alignment: { vertical: "middle", horizontal: 'center'},
+                border: {
+                    top: { style: "thin" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: cell.row == endCell.row ? "medium" : "thin" },
+                },
+              };
+            }
+        }
+
+        startCell = poSheet.getCell(`B${14+records.length}`);
+        endCell = poSheet.getCell(`S${14+records.length}`);
+
+        for (let col = startCell.col; col <= endCell.col; col++) {
+            const cell = poSheet.getCell(startCell.row, col);
+            cell.style = {
+                alignment: { vertical: "middle", horizontal: cell.col == 2 ? 'left' : 'center'},
+                font: { bold: true, color: { argb: cell.col == 2 ? "C00000" : "000000" } },
+                border: {
+                    top: { style: "medium" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: "thin" },
+                },
+            };
+        }
+
+        startCell = poSheet.getCell(`B${15+records.length}`);
+        endCell = poSheet.getCell(`S${16+records.length}`);
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            for (let col = startCell.col; col <= endCell.col; col++) {
+              const cell = poSheet.getCell(row, col);
+              cell.style = {
+                alignment: { vertical: "middle", horizontal: cell.col == 2 ? 'left' : 'center'},
+                font: { bold: cell.col == 2 ? true : false },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: "thin" },
+                },
+              };
+            }
+        }
+
+        startCell = poSheet.getCell(`B${17+records.length}`);
+        endCell = poSheet.getCell(`S${18+records.length}`);
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            for (let col = startCell.col; col <= endCell.col; col++) {
+              const cell = poSheet.getCell(row, col);
+              cell.style = {
+                alignment: { vertical: "middle", horizontal: 'left' },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: "thin" },
+                },
+              };
+            }
+        }
+
+        startCell = poSheet.getCell(`B${19+records.length}`);
+        endCell = poSheet.getCell(`S${21+records.length}`);
+
+        for (let row = startCell.row; row <= endCell.row; row++) {
+            for (let col = startCell.col; col <= endCell.col; col++) {
+              const cell = poSheet.getCell(row, col);
+              cell.style = {
+                alignment: { vertical: "middle", horizontal: 'left', wrapText: true },
+                font: { bold: row == startCell.row ? true : false },
+                border: {
+                    top: { style: "thin" },
+                    left: { style: cell.col == 2 ? "medium" : "thin" },
+                    right: { style: cell.col == 19 ? "medium" : "thin" },
+                    bottom: { style: cell.col == endCell.col ? "medium" : "thin" },
+                },
+              };
+            }
+        }
 
         poSheet.mergeCells("B3", "C3");
         poSheet.mergeCells("B4", "C4");
@@ -318,12 +690,17 @@ export default function AddBuyingOrder() {
         poSheet.mergeCells("I9", "S9");
         poSheet.mergeCells("I10", "S10");
         poSheet.mergeCells("I11", "S11");
-        poSheet.mergeCells("12", "S12");
+        poSheet.mergeCells("I12", "S12");
 
-        // Set the columns' widths
-        poSheet.columns.forEach((column) => {
-            column.width = 15;
-        });
+        poSheet.mergeCells(`B${14+records.length}`, `J${14+records.length}`);
+        poSheet.mergeCells(`B${15+records.length}`, `R${15+records.length}`);
+        poSheet.mergeCells(`B${16+records.length}`, `R${16+records.length}`);
+        poSheet.mergeCells(`B${17+records.length}`, `S${17+records.length}`);
+        poSheet.mergeCells(`B${18+records.length}`, `C${18+records.length}`);
+        poSheet.mergeCells(`D${18+records.length}`, `S${18+records.length}`);
+        poSheet.mergeCells(`B${19+records.length}`, `S${19+records.length}`);
+        poSheet.mergeCells(`B${20+records.length}`, `S${20+records.length}`);
+        poSheet.mergeCells(`B${21+records.length}`, `S${21+records.length}`);
 
         const blob = await poWorkbook.xlsx.writeBuffer();
 
@@ -347,40 +724,50 @@ export default function AddBuyingOrder() {
                 <div className="row">
                     <div className="col">
                         <TextField
-                            disabled
                             id="vendor-code"
                             label="Vendor Code"
-                            value={"Vendor Code"}
+                            value={vendorCode}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <TextField
-                            disabled
                             id="company-name"
                             label="Company Name"
-                            value={"Company Name"}
+                            value={vendor ? vendor.companyName : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <TextField
-                            disabled
                             id="state"
                             label="State"
-                            value={"State"}
+                            value={vendor ? vendor.address?.state : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                     </div>
                     <div className="col">
                         <TextField
-                            disabled
                             id="country"
                             label="Country"
-                            value={"Country"}
+                            value={vendor ? vendor.address?.country : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <TextField
-                            disabled
                             id="product-category"
                             label="Product Category"
-                            value={"Product Category"}
+                            value={vendor ? vendor.productCategory : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <button
