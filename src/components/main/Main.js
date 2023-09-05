@@ -1,4 +1,6 @@
 import {
+    Button,
+    ButtonGroup,
     Paper,
     Table,
     TableBody,
@@ -10,14 +12,14 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import './Main.css';
+import "./Main.css";
 
 const columns = [
     { id: "vendorCode", label: "Vendor Code", minWidth: 170 },
     { id: "companyName", label: "Company Name", minWidth: 170 },
     { id: "state", label: "State", minWidth: 170 },
     { id: "country", label: "Country", minWidth: 170 },
-    { id: "productCategory", label: "Product Category", minWidth: 170}
+    { id: "productCategory", label: "Product Category", minWidth: 170 },
     // { id: "beneficiary", label: "Beneficiary Name", minWidth: 170 },
     // { id: "accountNumber", label: "Account Number", minWidth: 170 },
     // { id: "ifsc", label: "IFSC", minWidth: 170 },
@@ -28,6 +30,10 @@ const columns = [
     // { id: "tradeMark", label: "Trade Mark", minWidth: 170 },
     // { id: "agreement", label: "Agreement", minWidth: 170 },
 ];
+
+const buttonStyle = {
+    textTransform: "none",
+};
 
 export default function Main() {
     const [page, setPage] = useState(0);
@@ -60,15 +66,17 @@ export default function Main() {
     }
 
     function showDetails() {
-        navigate(`/vendor/${selectedRow}`)
+        navigate(`/vendor/${selectedRow}`);
     }
 
     function addSKUs() {
-        navigate(`/new-skus/${selectedRow}`);
+        if (selectedRow) navigate(`/new-skus/${selectedRow}`);
+        else navigate(`/new-skus/new`);
     }
 
     function addBuyingOrder() {
-        navigate(`/new-buying-order/${selectedRow}`);
+        if (selectedRow) navigate(`/new-buying-order/${selectedRow}`);
+        else navigate(`/new-buying-order/new`);
     }
 
     const handleChangePage = (event, newPage) => {
@@ -81,29 +89,29 @@ export default function Main() {
     };
 
     const changeRowSelection = (rowCode) => {
-        if(selectedRow === rowCode)
-        setSelectedRow("");
-        else
-        setSelectedRow(rowCode);
-    }
+        if (selectedRow === rowCode) setSelectedRow("");
+        else setSelectedRow(rowCode);
+    };
 
     return (
         <div>
-            <div className="row">
-                <div className="col">
-                <div className="dynamic-button">
-            {selectedRow != "" && <button onClick={showDetails}>Show Details</button>}
-            {selectedRow != "" && <button onClick={addSKUs}>Add SKUs</button>}
-            {selectedRow != "" && <button onClick={addBuyingOrder}>Add Buying Sheet</button>}
-            </div>
-                </div>
-                <div className="col">
-                <button className="vendor-button" onClick={vendorRegistration}>Vendor Registration</button>
+            <ButtonGroup
+                variant="contained"
+                aria-label="outlined primary button group"
+                style={{ float: 'right', padding: '10px'}}
+            >
+                {/* {selectedRow != "" && <Button onClick={showDetails} style={buttonStyle}>Show Details</Button>} */}
+                <Button onClick={addSKUs} style={buttonStyle}>
+                    Add SKUs
+                </Button>
+                <Button onClick={addBuyingOrder} style={buttonStyle}>
+                    Add Buying Sheet
+                </Button>
+                <Button onClick={vendorRegistration} style={buttonStyle}>
+                    Vendor Registration
+                </Button>
+            </ButtonGroup>
 
-                </div>
-            </div>
-            
-          
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                 <TableContainer sx={{ maxHeight: 440 }}>
                     <Table stickyHeader aria-label="sticky table">
@@ -133,8 +141,14 @@ export default function Main() {
                                             role="checkbox"
                                             tabIndex={-1}
                                             key={row.vendorCode}
-                                            selected={row.vendorCode === selectedRow}
-                                            onClick={() => changeRowSelection(row.vendorCode)}
+                                            selected={
+                                                row.vendorCode === selectedRow
+                                            }
+                                            onClick={() =>
+                                                changeRowSelection(
+                                                    row.vendorCode
+                                                )
+                                            }
                                         >
                                             {columns.map((column) => {
                                                 const value = row[column.id];

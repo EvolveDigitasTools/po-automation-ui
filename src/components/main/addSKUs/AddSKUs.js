@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
-import { TextField, Typography } from "@mui/material";
+import { Autocomplete, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./AddSku.css";
 
@@ -8,15 +8,34 @@ export default function AddSKUs() {
     const params = useParams();
     const vendorCode = params.vendorCode;
     const [excelData, setExcelData] = useState([]);
+    const [vendors, setVendors] = useState([]);
+    const [vendor, setVendor] = useState(null);
 
     //ComponentDidMount
     useEffect(() => {
+        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
+            .then((response) => response.json())
+            .then((res) => {
+                let vendor = res.data.vendors.find(vendor => vendor.vendorCode == vendorCode)
+                if(vendor)
+                setVendor(vendor)
+                setVendors(res.data.vendors);
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+                // Handle the error
+            });
         return () => {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
             console.log("Component unmounted");
         };
     }, []);
+
+    const updateVendor = async (field, fieldValue) => {
+        console.log(field, fieldValue)
+        setVendor(fieldValue)
+    }
 
     const handleDownload = async () => {
         // Sample data for the Excel file
@@ -98,7 +117,28 @@ export default function AddSKUs() {
             parsedData.push(row.values);
         });
 
-        const keys = ['skuCode', 'category', 'brand', 'productTitle', 'hsn', 'ean', 'modelNumber', 'size', 'colorFamilyColor', 'productLengthCm', 'productBreadthCm', 'productHeightCm', 'productWeightKg', 'masterCartonQty', 'masterCartonLengthCm', 'masterCartonBreadthCm', 'masterCartonHeightCm', 'masterCartonWeightKg', 'MRP', 'vendorCode'];
+        const keys = [
+            "skuCode",
+            "category",
+            "brand",
+            "productTitle",
+            "hsn",
+            "ean",
+            "modelNumber",
+            "size",
+            "colorFamilyColor",
+            "productLengthCm",
+            "productBreadthCm",
+            "productHeightCm",
+            "productWeightKg",
+            "masterCartonQty",
+            "masterCartonLengthCm",
+            "masterCartonBreadthCm",
+            "masterCartonHeightCm",
+            "masterCartonWeightKg",
+            "MRP",
+            "vendorCode",
+        ];
         for (let i = 1; i < parsedData.length; i++) {
             const row = parsedData[i].slice(1);
             console.log("row", i, row);
@@ -107,10 +147,9 @@ export default function AddSKUs() {
 
             for (let i = 0; i < row.length; i++) {
                 const value = row[i];
-                if(value)
-                formData.append(keys[i], value);
+                if (value) formData.append(keys[i], value);
             }
-            formData.append('vendorCode',vendorCode)
+            formData.append("vendorCode", vendor.vendorCode);
 
             // Data is valid, make an API request to send the data
             // Example using fetch API
@@ -142,48 +181,82 @@ export default function AddSKUs() {
                 <h2>Vendor Details</h2>
                 <div className="row">
                     <div className="col">
-                        <TextField
-                            disabled
+                        <Autocomplete
+                            required
+                            disablePortal
                             id="vendor-code"
-                            label="Vendor Code"
-                            value={"Vendor Code"}
-                            fullWidth
+                            options={vendors}
+                            getOptionLabel={(option) => option.vendorCode}
+                            renderInput={(params) => (
+                                <TextField
+                                    required
+                                    {...params}
+                                    inputProps={{
+                                        ...params.inputProps,
+                                        autoComplete: "new-password",
+                                        style: { width: "auto" },
+                                    }}
+                                    label="Vendor Code"
+                                />
+                            )}
+                            value={vendor}
+                            onChange={(e, newValue) => setVendor(newValue)}
                         />
-                        <TextField
-                            disabled
+                        <Autocomplete
+                            required
+                            disablePortal
                             id="company-name"
-                            label="Company Name"
-                            value={"Company Name"}
-                            fullWidth
+                            options={vendors}
+                            getOptionLabel={(option) => option.companyName}
+                            renderInput={(params) => (
+                                <TextField
+                                    required
+                                    {...params}
+                                    inputProps={{
+                                        ...params.inputProps,
+                                        autoComplete: "new-password",
+                                        style: { width: "auto" },
+                                    }}
+                                    label="Company Name"
+                                />
+                            )}
+                            value={vendor}
+                            onChange={(e, newValue) => setVendor(newValue)}
                         />
                         <TextField
-                            disabled
                             id="state"
                             label="State"
-                            value={"State"}
+                            value={vendor ? vendor.state : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                     </div>
                     <div className="col">
                         <TextField
-                            disabled
                             id="country"
                             label="Country"
-                            value={"Country"}
+                            value={vendor ? vendor.country : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <TextField
-                            disabled
                             id="product-category"
                             label="Product Category"
-                            value={"Product Category"}
+                            value={vendor ? vendor.productCategory : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
                             fullWidth
                         />
                         <button
                             className="download-button"
                             onClick={handleDownload}
                         >
-                            Download Sample SKU Excel
+                            Download Sample Buying Sheet Excel
                         </button>
                     </div>
                 </div>

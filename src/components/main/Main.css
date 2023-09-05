@@ -3,27 +3,3 @@
 padding: 20px;
 
 }
-.row{
-    display: flex;
-}
-.row .col{
-    max-width: 50%;
-    width: 50%;
-    padding-top: 10px;
-    display: block;
-}
-.vendor-button{
-    float: right;
-    margin-right: 20px;
-   
-    padding: 10px;
-}
-.dynamic-button{
-    
-    margin-left: 20px;
-    
-}
-.dynamic-button button{
-    padding: 10px;
-
-}

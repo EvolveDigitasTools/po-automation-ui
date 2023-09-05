@@ -81,18 +81,14 @@ function convertToIndianNumber(num) {
     }
   
     return result;
-  }
-  
-  // Example usage:
-  const number = 123456789.99;
-  const textNumber = convertToIndianNumber(number);
-  console.log(textNumber); // Output: "twelve crore thirty-four lakh fifty-six thousand seven hundred eighty-nine rupees and ninety-nine paise"
+}
   
 
 export default function AddBuyingOrder() {
     const params = useParams();
     const vendorCode = params.vendorCode;
     const [vendor, setVendor] = useState(null);
+    const [vendors, setVendors] = useState([]);
     const [excelData, setExcelData] = useState([]);
     const [currency, setCurrency] = useState("INR");
     const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
@@ -102,6 +98,16 @@ export default function AddBuyingOrder() {
 
     //ComponentDidMount
     useEffect(() => {
+        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
+            .then((response) => response.json())
+            .then((res) => {
+                setVendors(res.data.vendors);
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+                // Handle the error
+            });
+        if(vendorCode != 'new')
         fetch(`${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`)
             .then((response) => response.json())
             .then((res) => {
@@ -117,6 +123,21 @@ export default function AddBuyingOrder() {
             console.log("Component unmounted");
         };
     }, []);
+
+    const updateVendor = async (newVendor) => {
+        if(newVendor?.vendorCode)
+        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/${newVendor.vendorCode}`)
+            .then((response) => response.json())
+            .then((res) => {
+                setVendor(res.data.vendor);
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+                // Handle the error
+            });
+        else
+        setVendor(null);
+    }
 
     const handleDownload = async () => {
         // Sample data for the Excel file
@@ -840,23 +861,47 @@ export default function AddBuyingOrder() {
                 <h2>Vendor Details</h2>
                 <div className="row">
                     <div className="col">
-                        <TextField
+                    <Autocomplete
+                            required
+                            disablePortal
                             id="vendor-code"
-                            label="Vendor Code"
-                            value={vendorCode}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
+                            options={vendors}
+                            getOptionLabel={(option) => option.vendorCode}
+                            renderInput={(params) => (
+                                <TextField
+                                    required
+                                    {...params}
+                                    inputProps={{
+                                        ...params.inputProps,
+                                        autoComplete: "new-password",
+                                        style: { width: "auto" },
+                                    }}
+                                    label="Vendor Code"
+                                />
+                            )}
+                            value={vendor}
+                            onChange={(e, newValue) => updateVendor(newValue)}
                         />
-                        <TextField
+                        <Autocomplete
+                            required
+                            disablePortal
                             id="company-name"
-                            label="Company Name"
-                            value={vendor ? vendor.companyName : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
+                            options={vendors}
+                            getOptionLabel={(option) => option.companyName}
+                            renderInput={(params) => (
+                                <TextField
+                                    required
+                                    {...params}
+                                    inputProps={{
+                                        ...params.inputProps,
+                                        autoComplete: "new-password",
+                                        style: { width: "auto" },
+                                    }}
+                                    label="Company Name"
+                                />
+                            )}
+                            value={vendor}
+                            onChange={(e, newValue) => updateVendor(newValue)}
                         />
                         <TextField
                             id="state"
