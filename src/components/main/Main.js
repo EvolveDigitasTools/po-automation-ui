@@ -94,7 +94,7 @@ export default function Main() {
                 <div className="dynamic-button">
             {selectedRow != "" && <button onClick={showDetails}>Show Details</button>}
             {selectedRow != "" && <button onClick={addSKUs}>Add SKUs</button>}
-            {selectedRow != "" && <button onClick={addBuyingOrder}>Add Buying Order</button>}
+            {selectedRow != "" && <button onClick={addBuyingOrder}>Add Buying Sheet</button>}
             </div>
                 </div>
                 <div className="col">

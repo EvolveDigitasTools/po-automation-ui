@@ -12,17 +12,17 @@ export default function AppNavBar() {
             component="a"
             href="/"
             sx={{
-              mr: 2,
+              m: 'auto',
               display: { xs: 'none', md: 'flex' },
-              fontFamily: 'monospace',
+              fontFamily: 'sans-serif',
               fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
+              color: '#75bfb0',
               textDecoration: 'none',
             }}
           >
-            PO Automation Tool
+            PURCHASE ORDER
           </Typography>
+          <img style={{ visibility: 'hidden' }} className="logo" src={`${process.env.PUBLIC_URL}/images/plugin-logo.png`} />
         </Toolbar>
       </Container>
     </AppBar>)

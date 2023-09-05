@@ -380,7 +380,7 @@ export default function AddBuyingOrder() {
         const isInterState = vendor.address.state != "Uttar Pradesh"
         for (let i = 0; i < records.length; i++) {
             let igst = 0, sgst = 0;
-            if(isInterState){
+            if(!isInterState){
                 sgst = records[i].expectedQty * records[i].unitCost * records[i].gst / 200;
                 totalSgst += sgst;
             }
@@ -403,11 +403,11 @@ export default function AddBuyingOrder() {
                 skus[records[i].skuCode].colorFamilyColor,
                 records[i].expectedQty,
                 records[i].unitCost,
-                isInterState ? 0: records[i].gst/100,
+                isInterState ? records[i].gst/100 : 0,
                 igst,
-                isInterState ? records[i].gst/200 : 0,
+                isInterState ? 0 : records[i].gst/200,
                 sgst,
-                isInterState ? records[i].gst/200 : 0,
+                isInterState ? 0 : records[i].gst/200,
                 sgst,
                 records[i].expectedQty * records[i].unitCost,
             ]);
@@ -419,7 +419,7 @@ export default function AddBuyingOrder() {
             ["", "This is a digital PO and doesn't require Authorised Signatory", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ["", "Requested by :", "", vendor.contactPerson.email, "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ["", "Terms & Conditions", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-            ["", "1. Please send a copy of invoice & PO along with stock.\n2. Please Mention the PO no. on invoice.\n3. Freight Charges are not included.\n4. Multiple invoices for a single PO will not be entertained", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+            ["", "1. Please send a copy of invoice & PO along with stock.\n2. Please Mention the PO no. on invoice.\n3. Freight Charges are not included.\n4. Multiple invoices for a single PO will not be entertained.\n5. For Grocery Category items must have minimum 75% or 18 Months of Shelf life from the Delivery Date.", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
             ["", "In relation to products purchased under this PO, the seller agrees to be liable and indemnify Pluugin E-Commerce against any losses, damages and/or expenses arising out of or relating to: \na) any defects or damage to a product that occurred prior to acceptance of the product by Pluugin E-Commerce, or after acceptance with respect to latent deficiencies;\nb) any third party claims, including governmental and regulatory claims, investigations or similar, regarding use of the products; or c) a breach of any applicable law.", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
         )
 
@@ -436,7 +436,7 @@ export default function AddBuyingOrder() {
             15.0, 26.3, 15.0, 15.0, 30, 17.3, 15.8, 18.0, 18.0, 19.5, 19.5,
             30, 27.8,
         ];
-        const rowEndHeights = [13.0, 13.0, 13.0, 13.0, 14.2, 14.2, 60.0, 60.0]
+        const rowEndHeights = [13.0, 13.0, 13.0, 13.0, 14.2, 14.2, 80.0, 60.0]
 
         for (let i = 2; i <= columnWidths.length + 1; i++)
             poSheet.getColumn(i).width = columnWidths[i - 2] + 0.64;
@@ -456,7 +456,7 @@ export default function AddBuyingOrder() {
             const cell = poSheet.getCell(startCell.row, col);
             cell.style = {
                 alignment: { horizontal: "center", vertical: "middle" },
-                font: { bold: true },
+                font: { bold: true, size: 13 },
                 fill: {
                     type: "pattern",
                     pattern: "solid",
@@ -667,7 +667,7 @@ export default function AddBuyingOrder() {
             }
         }
 
-        if(isInterState) {
+        if(!isInterState) {
             startCell = poSheet.getCell("O14");
             endCell = poSheet.getCell(`O${13+records.length}`);
 
@@ -719,7 +719,7 @@ export default function AddBuyingOrder() {
               const cell = poSheet.getCell(row, col);
               cell.style = {
                 alignment: { vertical: "middle", horizontal: cell.col == 2 ? 'left' : 'center'},
-                font: { bold: cell.col == 2 ? true : false },
+                font: { bold: (cell.col == 2 || cell.row == endCell.row) ? true : false },
                 border: {
                     top: { style: "thin" },
                     left: { style: cell.col == 2 ? "medium" : "thin" },
@@ -825,7 +825,7 @@ export default function AddBuyingOrder() {
         const url = URL.createObjectURL(new Blob([blob]));
         const a = document.createElement("a");
         a.href = url;
-        a.download = "po.xlsx";
+        a.download = "po.pdf";
         a.click();
 
         // Clean up by revoking the Blob URL
