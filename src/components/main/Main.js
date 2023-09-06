@@ -62,7 +62,7 @@ export default function Main() {
     }, []);
 
     function vendorRegistration() {
-        navigate("/vendor-registration");
+        navigate("/");
     }
 
     function showDetails() {
@@ -101,14 +101,14 @@ export default function Main() {
                 style={{ float: 'right', padding: '10px'}}
             >
                 {/* {selectedRow != "" && <Button onClick={showDetails} style={buttonStyle}>Show Details</Button>} */}
+                <Button onClick={vendorRegistration} style={buttonStyle}>
+                    Vendor Registration
+                </Button>
                 <Button onClick={addSKUs} style={buttonStyle}>
                     Add SKUs
                 </Button>
                 <Button onClick={addBuyingOrder} style={buttonStyle}>
                     Create PO
-                </Button>
-                <Button onClick={vendorRegistration} style={buttonStyle}>
-                    Vendor Registration
                 </Button>
             </ButtonGroup>
 

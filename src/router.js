@@ -11,8 +11,8 @@ export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route element ={<HomeLayout />}>
-        <Route path="/" element={<Main />} />
-        <Route path="/vendor-registration" element={<VendorRegistration />} />
+        <Route path="/" element={<VendorRegistration />} />
+        <Route path="/main" element={<Main />} />
         <Route path="/new-skus/:vendorCode" element={<AddSKUs />} />
         <Route path="/new-buying-order/:vendorCode" element={<AddBuyingOrder />} />
         <Route path="/vendor/:vendorCode" element={<VendorDetails />} />
