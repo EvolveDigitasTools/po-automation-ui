@@ -42,19 +42,15 @@ export default function VendorRegistration() {
     const [agreementAttachment, setAgreementAttachment] = useState(null);
     const [dynamicFields, setDynamicFields] = useState([]);
     const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState([]);
-    const [countries, setCountries] = useState([]);
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
+    const [countryStateCityData, setCountryStateCityData] = useState([]);
+    const [stateCityData, setStateCityData] = useState([]);
+    const [cityData, setCityData] = useState([]);
     const categories = ['Electronics & Mobiles', 'Appliances', 'Sports & Outdoors', 'Fashion & Apparel', 'Pet Supplies', 'Health & Welness', 'Baby Products', 'Beauty & Personal Care', 'Grocery'];
 
     //ComponentDidMount
     useEffect(() => {
-        const url = "https://www.universal-tutorial.com/api/countries";
+        const url = "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
         const headers = new Headers();
-        headers.append(
-            "Authorization",
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJfZW1haWwiOiJqYXRpbmErdW5pdmVyc2V0dXRvcmlhbEBldm9sdmVkaWdpdGFzLmNvbSIsImFwaV90b2tlbiI6Im5HV05lWkNXSTBfUnFPTlE1UjcxQ1daeHl1TEVxSmxKQ3BiaVdCd1B0bFBSQWNIaTFRR1FWRDZPT01TZVJqYkQ2MkEifSwiZXhwIjoxNjkzNTY0MjE0fQ.j9TgSc-LgGp9Z6t0Nf6cfQhSL0YGhSeW6gbhf3faheM"
-        );
         headers.append("Accept", "application/json");
 
         const requestOptions = {
@@ -65,7 +61,7 @@ export default function VendorRegistration() {
         fetch(url, requestOptions)
             .then((response) => response.json())
             .then((data) => {
-                setCountries(data);
+                setCountryStateCityData(data);
             })
             .catch((error) => {
                 console.error("Error submitting address:", error);
@@ -81,73 +77,35 @@ export default function VendorRegistration() {
     const onCountryChange = (e, newValue) => {
         e.preventDefault();
         if (!newValue) {
-            setStates([]);
-            setCities([]);
+            setStateCityData([]);
+            setCityData([]);
             setCountry(null);
             setState(null);
             setCity(null);
             return;
         }
-        const url = `https://www.universal-tutorial.com/api/states/${newValue.country_name}`;
-        const headers = new Headers();
-        headers.append(
-            "Authorization",
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJfZW1haWwiOiJqYXRpbmErdW5pdmVyc2V0dXRvcmlhbEBldm9sdmVkaWdpdGFzLmNvbSIsImFwaV90b2tlbiI6Im5HV05lWkNXSTBfUnFPTlE1UjcxQ1daeHl1TEVxSmxKQ3BiaVdCd1B0bFBSQWNIaTFRR1FWRDZPT01TZVJqYkQ2MkEifSwiZXhwIjoxNjkzNTY0MjE0fQ.j9TgSc-LgGp9Z6t0Nf6cfQhSL0YGhSeW6gbhf3faheM"
-        );
-        headers.append("Accept", "application/json");
-
-        const requestOptions = {
-            method: "GET",
-            headers: headers,
-        };
-
-        fetch(url, requestOptions)
-            .then((response) => response.json())
-            .then((data) => {
-                setCountry(newValue);
-                setStates(data.map((stateObject) => stateObject.state_name));
-                setState(null);
-                setCity(null);
-            })
-            .catch((error) => {
-                console.error("Error submitting address:", error);
-            });
+        setCountry(newValue);
+        setStateCityData(newValue.states)
+        setState(null);
+        setCity(null);
+        setCityData([]);
     };
 
     const onStateChange = (e, newValue) => {
         e.preventDefault();
         if (!newValue) {
-            setCities([]);
+            setCityData([]);
             setState(null);
             setCity(null);
             return;
         }
-        const url = `https://www.universal-tutorial.com/api/cities/${newValue}`;
-        const headers = new Headers();
-        headers.append(
-            "Authorization",
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJfZW1haWwiOiJqYXRpbmErdW5pdmVyc2V0dXRvcmlhbEBldm9sdmVkaWdpdGFzLmNvbSIsImFwaV90b2tlbiI6Im5HV05lWkNXSTBfUnFPTlE1UjcxQ1daeHl1TEVxSmxKQ3BiaVdCd1B0bFBSQWNIaTFRR1FWRDZPT01TZVJqYkQ2MkEifSwiZXhwIjoxNjkzNTY0MjE0fQ.j9TgSc-LgGp9Z6t0Nf6cfQhSL0YGhSeW6gbhf3faheM"
-        );
-        headers.append("Accept", "application/json");
-
-        const requestOptions = {
-            method: "GET",
-            headers: headers,
-        };
-
-        fetch(url, requestOptions)
-            .then((response) => response.json())
-            .then((data) => {
-                setState(newValue);
-                if(data.length > 0)
-                setCities(data.map((cityObject) => cityObject.city_name));
-                else
-                setCities(['Not Applicable']);
-                setCity(null);
-            })
-            .catch((error) => {
-                console.error("Error submitting address:", error);
-            });
+        let cityData = newValue.cities;
+        setState(newValue);
+        if(cityData.length > 0)
+        setCityData(cityData)
+        else
+        setCityData(['Not Applicable']);
+        setCity(null);
     };
 
     const handleSubmit = (e) => {
@@ -164,9 +122,9 @@ export default function VendorRegistration() {
         formData.append("addressLine1", addressLine1);
         if(addressLine2)
         formData.append("addressLine2", addressLine2);
-        formData.append("country", country.country_name);
-        formData.append("state", state);
-        formData.append("city", city);
+        formData.append("country", country.name);
+        formData.append("state", state.name);
+        formData.append("city", city.name);
         formData.append("postalCode", postalCode);
         formData.append("beneficiary", beneficiary);
         formData.append("accountNumber", accountNumber);
@@ -343,9 +301,9 @@ export default function VendorRegistration() {
                         <div className="col">
                             <Autocomplete
                                 id="country"
-                                options={countries}
+                                options={countryStateCityData}
                                 autoHighlight
-                                getOptionLabel={(option) => option.country_name}
+                                getOptionLabel={(option) => option.name ? option.name : ""}
                                 renderOption={(props, option) => (
                                     <Box
                                         component="li"
@@ -357,12 +315,12 @@ export default function VendorRegistration() {
                                         <img
                                             loading="lazy"
                                             width="20"
-                                            src={`https://flagcdn.com/w20/${option.country_short_name.toLowerCase()}.png`}
-                                            srcSet={`https://flagcdn.com/w40/${option.country_short_name.toLowerCase()}.png 2x`}
+                                            src={`https://flagcdn.com/w20/${option.iso2.toLowerCase()}.png`}
+                                            srcSet={`https://flagcdn.com/w40/${option.iso2.toLowerCase()}.png 2x`}
                                             alt=""
                                         />
-                                        {option.country_name} (
-                                        {option.country_short_name})
+                                        {option.name} (
+                                        {option.iso2})
                                     </Box>
                                 )}
                                 renderInput={(params) => (
@@ -383,7 +341,8 @@ export default function VendorRegistration() {
                             <Autocomplete
                                 disablePortal
                                 id="city"
-                                options={cities}
+                                options={cityData}
+                                getOptionLabel={(option) => option.name ? option.name : ""}
                                 renderInput={(params) => (
                                     <TextField
                                         required
@@ -404,7 +363,8 @@ export default function VendorRegistration() {
                             <Autocomplete
                                 disablePortal
                                 id="state"
-                                options={states}
+                                options={stateCityData}
+                                getOptionLabel={(option) => option.name ? option.name : ""}
                                 renderInput={(params) => (
                                     <TextField
                                         required
