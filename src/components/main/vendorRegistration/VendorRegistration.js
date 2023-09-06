@@ -217,7 +217,7 @@ export default function VendorRegistration() {
         setDynamicFieldsAttachments(newFieldsAttachs);
     };
 
-    if (!isDetailSubmitted)
+    if (isDetailSubmitted)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
                 <Paper
