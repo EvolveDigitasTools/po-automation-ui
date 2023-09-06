@@ -273,7 +273,7 @@ export default function AddBuyingOrder() {
         // Create a new workbook
         const poWorkbook = new ExcelJS.Workbook();
         const poSheet = poWorkbook.addWorksheet("Order Details");
-
+        
         // Define the data
         const data = [
             [],
@@ -293,12 +293,12 @@ export default function AddBuyingOrder() {
                 "",
                 "Partner Code :",
                 "",
-                vendorCode,
+                vendor.vendorCode,
                 "",
                 "",
                 "",
                 "P.O No :",
-                newBO.data.buyingOrder.poCode,
+                newBO?.data?.buyingOrder?.poCode,
             ],
             [
                 "",
@@ -381,7 +381,7 @@ export default function AddBuyingOrder() {
                 "",
                 "",
                 "CIN:",
-                "XYZ",
+                "",
             ],
             [
                 "",
@@ -517,7 +517,7 @@ export default function AddBuyingOrder() {
                 "",
                 `Grand Total (${currency}) - ${convertToIndianNumber(
                     totalIgst + totalSgst * 2 + totalAmount
-                )}`,
+                )}Only`,
                 "",
                 "",
                 "",
@@ -1111,7 +1111,7 @@ export default function AddBuyingOrder() {
 
     return (
         <div className="new-skus">
-            <h1>Add New Buying Sheet</h1>
+            <h1>PO Creation</h1>
             <button className="back-button">Back</button>
             <div className="vendor-info">
                 <h2>Vendor Details</h2>
@@ -1192,7 +1192,7 @@ export default function AddBuyingOrder() {
                             className="download-button"
                             onClick={handleDownload}
                         >
-                            Download Sample Buying Sheet Excel
+                            Download Buying Sheet Format
                         </button>
                     </div>
                 </div>

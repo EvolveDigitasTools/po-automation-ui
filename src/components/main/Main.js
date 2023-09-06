@@ -105,7 +105,7 @@ export default function Main() {
                     Add SKUs
                 </Button>
                 <Button onClick={addBuyingOrder} style={buttonStyle}>
-                    Add Buying Sheet
+                    Create PO
                 </Button>
                 <Button onClick={vendorRegistration} style={buttonStyle}>
                     Vendor Registration
