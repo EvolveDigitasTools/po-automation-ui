@@ -24,6 +24,7 @@ export default function VendorRegistration() {
     const [contactPersonName, setContactPersonName] = useState("");
     const [contactPersonEmail, setContactPersonEmail] = useState("");
     const [contactPersonPhone, setContactPersonPhone] = useState("");
+    const [isValidPhone, setIsValidPhone] = useState(true);
     const [productCategory, setProductCategory] = useState("");
     const [gst, setGst] = useState("");
     const [gstAttachment, setGstAttachment] = useState(null);
@@ -92,6 +93,17 @@ export default function VendorRegistration() {
             console.log("Component unmounted");
         };
     }, []);
+
+    const onPhoneChange = (e) => {
+        const inputValue = e.target.value;
+        const phoneNumberPattern = /^\+?\d{1,4}[-.\/\s]?\(?\d{1,4}\)?[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}$/; // Adjust this regex based on your specific validation criteria
+
+        // Test if the input matches the phone number pattern
+        const isValidPhoneNumber = phoneNumberPattern.test(inputValue);
+
+        setContactPersonPhone(inputValue);
+        setIsValidPhone(isValidPhoneNumber);
+    };
 
     const onCountryChange = (e, newValue) => {
         e.preventDefault();
@@ -181,7 +193,7 @@ export default function VendorRegistration() {
         })
             .then((response) => response.json())
             .then((data) => {
-                setIsDetailSubmitted(true)
+                setIsDetailSubmitted(true);
                 console.log("API response:", data);
                 // Handle the response as needed
             })
@@ -250,7 +262,7 @@ export default function VendorRegistration() {
                 <h1>Vendor Registration</h1>
                 <Stack component="form" onSubmit={handleSubmit}>
                     <div className="company-details">
-                        <h2>Compnay Details</h2>
+                        <h2>Company Details</h2>
                         <TextField
                             required
                             id="company-name"
@@ -315,9 +327,9 @@ export default function VendorRegistration() {
                                     id="contact-person-phone"
                                     label="Contact Person Phone"
                                     value={contactPersonPhone}
-                                    onChange={(e) =>
-                                        setContactPersonPhone(e.target.value)
-                                    }
+                                    onChange={onPhoneChange}
+                                    error={!isValidPhone}
+                                    helperText={!isValidPhone ? 'Invalid phone number' : ''}
                                 />
                                 <Box>
                                     <TextField
@@ -447,6 +459,7 @@ export default function VendorRegistration() {
                                     required
                                     label="Postal Code"
                                     id="postal-code"
+                                    type="number"
                                     value={postalCode}
                                     onChange={(e) =>
                                         setPostalCode(e.target.value)
