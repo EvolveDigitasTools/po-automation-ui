@@ -11,6 +11,7 @@ import {
     Container,
     Paper,
     Typography,
+    CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -19,6 +20,7 @@ import { CheckCircleOutline } from "@mui/icons-material";
 
 export default function VendorRegistration() {
     const [isDetailSubmitted, setIsDetailSubmitted] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const [companyName, setCompanyName] = useState("");
     const [contactPersonName, setContactPersonName] = useState("");
@@ -82,6 +84,7 @@ export default function VendorRegistration() {
             .then((response) => response.json())
             .then((data) => {
                 setCountryStateCityData(data);
+                setLoading(false);
             })
             .catch((error) => {
                 console.error("Error submitting address:", error);
@@ -116,7 +119,10 @@ export default function VendorRegistration() {
             return;
         }
         setCountry(newValue);
-        setStateCityData(newValue.states);
+        if (newValue.states && newValue.states.length > 0)
+            setStateCityData(newValue.states);
+        else
+            setStateCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
         setState(null);
         setCity(null);
         setCityData([]);
@@ -133,12 +139,13 @@ export default function VendorRegistration() {
         let cityData = newValue.cities;
         setState(newValue);
         if (cityData.length > 0) setCityData(cityData);
-        else setCityData(["Not Applicable"]);
+        else setCityData([{ name: "Not Applicable" }]);
         setCity(null);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setLoading(true);
         // Do something with the form data, like sending it to a server
         const formData = new FormData();
 
@@ -194,6 +201,7 @@ export default function VendorRegistration() {
             .then((response) => response.json())
             .then((data) => {
                 setIsDetailSubmitted(true);
+                setLoading(false);
                 console.log("API response:", data);
                 // Handle the response as needed
             })
@@ -229,7 +237,18 @@ export default function VendorRegistration() {
         setDynamicFieldsAttachments(newFieldsAttachs);
     };
 
-    if (isDetailSubmitted)
+    if (loading)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                    <CircularProgress />
+                    <Typography variant="h4" gutterBottom>
+                        Loading...
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    else if (isDetailSubmitted)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
                 <Paper
