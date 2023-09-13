@@ -18,9 +18,7 @@
 .new-skus .row{
     display: flex;
 }
-.new-skus .MuiInputBase-root{
-margin-bottom: 15px;
-}
+
 .file-input{
     width: 100%;
 }

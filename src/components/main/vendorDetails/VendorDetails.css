@@ -2,10 +2,6 @@
     width: 80%;
     margin: 3% auto;
 }
-.vendor-main-container .css-yjsfm1{
-    height: 20px;
-    color:#fff!important;
-}
 .vendor-main-container .row{
     display: flex;
 }
@@ -20,10 +16,7 @@
 .checkbox-first{
     margin-bottom: 15px;
 }
-.file-first .MuiInputBase-input{
-    padding: 14px;
-    margin-top: 4px;
-}
+
 .vendor-main-container .row .col:nth-child(1){
     margin-right: 10px;
 }
@@ -44,13 +37,7 @@
     padding-top: 5px;
     display: block;
 }
-.vendor-main-container .row .col .MuiFormControl-root{
-    display: block;
-    width: 100%;
-}
-.vendor-main-container .row .col .MuiFormControl-root .MuiInputBase-root{
-    display: block;
-}
+
 #bank-attch{
     position: relative;
     left: 100px;
@@ -87,11 +74,6 @@
     height: 25px;
 }
 
-
-.file-input .MuiInputBase-input{
-    height: 20px!important;
-    margin-bottom: 3px;
-}
 /* label[data-shrink=false]+.MuiInputBase-formControl .css-p51h6s-MuiInputBase-input-MuiOutlinedInput-input{
     padding-left: 120px;
     font-size: 14px!important;

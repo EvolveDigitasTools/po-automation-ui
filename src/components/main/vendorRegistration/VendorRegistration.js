@@ -12,15 +12,24 @@ import {
     Paper,
     Typography,
     CircularProgress,
+    Grid,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "./vendorRegistration.css";
 import { CheckCircleOutline } from "@mui/icons-material";
+import { useParams } from "react-router-dom";
+import jwtDecode from "jwt-decode";
+import Attachment from "../../attachment/Attachment";
+import { getMimeTypeFromFileName } from "../../../util";
 
 export default function VendorRegistration() {
     const [isDetailSubmitted, setIsDetailSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [title, setTitle] = useState("Vendor Registration");
+    const [commentData, setCommentData] = useState("");
+    const [submit, setSubmit] = useState(false)
+    const params = useParams();
 
     const [companyName, setCompanyName] = useState("");
     const [contactPersonName, setContactPersonName] = useState("");
@@ -68,27 +77,95 @@ export default function VendorRegistration() {
         "Grocery",
     ];
 
+    console.log('gstAttach', gstAttachment)
+
     //ComponentDidMount
     useEffect(() => {
-        const url =
-            "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
-        const headers = new Headers();
-        headers.append("Accept", "application/json");
+        const checkAndUseValidationToken = async () => {
+            const validateToken = params.validateToken;
 
-        const requestOptions = {
-            method: "GET",
-            headers: headers,
-        };
+            if (validateToken) {
+                const decodedToken = jwtDecode(validateToken);
+                console.log(decodedToken)
+                if (decodedToken.type == "vendor-fail") {
+                    const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
+                    const vendorResponse = await fetch(getVendorDetailsUrl);
+                    console.log(vendorResponse)
+                    const vendorJson = await vendorResponse.json();
+                    const vendorDetails = vendorJson.data.vendor;
+                    console.log(vendorDetails)
+                    const { isVerified, companyName, comments, productCategory, contactPerson, gst, gstAtt, address, vendorBank, agreementAtt } = vendorDetails
+                    setTitle("Update Vendor Details")
+                    let comment = ""
+                    comments.forEach(commentData => comment = comment.concat(commentData.comment + "\n"));
+                    console.log("comment", comment, comments)
+                    setCommentData(comment)
+                    setCompanyName(companyName);
+                    setProductCategory(productCategory);
+                    setContactPersonName(contactPerson.name);
+                    setContactPersonEmail(contactPerson.email);
+                    setContactPersonPhone(contactPerson.phoneNumber);
+                    setGst(gst);
+                    let blob = new Blob([new Uint8Array(gstAtt.fileContent.data)]);
+                    const gstFile = new File([blob], gstAtt.fileName, { type: getMimeTypeFromFileName(gstAtt.fileName) });
+                    console.log(gstFile)
+                    setGstAttachment(gstFile);
+                    setAddressLine1(address.addressLine1)
+                    if (address.addressLine2)
+                        setAddressLine2(address.addressLine2)
+                    console.log(countryStateCityData, address)
+                    const tempCountry = countryStateCityData.find(country => country.name == address.country)
+                    setCountry(tempCountry)
+                    if(tempCountry.states.length > 0) {
+                        setStateCityData(tempCountry.states)
+                        const tempState = tempCountry.states.find(state => state.name == address.state)
+                        setState(tempState)
+                        if(tempState.cities.length > 0) {
+                            setCityData(tempState.cities)
+                            const tempCity = tempState.cities.find(city => city.name == address.city)
+                            setCity(tempCity)
+                        }
+                        else{
+                            setCityData([{ name: "Not Applicable" }])
+                            setCity({ name: "Not Applicable" })
+                        }
+                    }
+                    else {
+                        setStateCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }])
+                        setState({ name: "Not Applicable", cities: [{ name: "Not Applicable" }]})
+                        setCityData([{ name: "Not Applicable" }])
+                        setCity({ name: "Not Applicable" })
+                    }
+                    setPostalCode(address.postalCode)
+                    setBeneficiary(vendorBank.beneficiaryName)
+                    setBankName(vendorBank.bankName)
+                    setAccountNumber(vendorBank.accountNumber)
+                    setBranch(vendorBank.branch)
+                    setIfsc(vendorBank.ifsc)
+                    blob = new Blob([new Uint8Array(vendorBank.proofAtt.fileContent.data)]);
+                    const bankAttFile = new File([blob], vendorBank.proofAtt.fileName, { type: getMimeTypeFromFileName(vendorBank.proofAtt.fileName) });
+                    setBankAttachment(bankAttFile)
+                    blob = new Blob([new Uint8Array(agreementAtt.fileContent.data)]);
+                    const agreementAttFile = new File([blob], agreementAtt.fileName, { type: getMimeTypeFromFileName(agreementAtt.fileName) });
+                    setAgreementAttachment(agreementAttFile)
+                }
+                // setVendorCode(decodedToken.vendorCode)
+            }
+        }
 
-        fetch(url, requestOptions)
-            .then((response) => response.json())
-            .then((data) => {
-                setCountryStateCityData(data);
-                setLoading(false);
-            })
-            .catch((error) => {
-                console.error("Error submitting address:", error);
-            });
+        const getCountryStateCitydata = async () => {
+            const countryStateCityDataURL = "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
+            const dataResponse = await fetch(countryStateCityDataURL)
+            const data = await dataResponse.json();
+            setCountryStateCityData(data);
+        }
+
+        const asyncUseEffect = async () => {
+            await getCountryStateCitydata();
+            await checkAndUseValidationToken();
+            setLoading(false)
+        }
+        asyncUseEffect()
 
         return () => {
             // This code will run when the component is unmounted
@@ -145,6 +222,10 @@ export default function VendorRegistration() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if(!gstAttachment || !bankAttachment || !agreementAttachment){
+            setSubmit(true)
+            return
+        }
         setLoading(true);
         // Do something with the form data, like sending it to a server
         const formData = new FormData();
@@ -215,7 +296,7 @@ export default function VendorRegistration() {
         const newFields = [...dynamicFields];
         const newFieldsAttachs = [...dynamicFieldsAttachments];
         if (fieldToUpdate == "attachment") {
-            newFieldsAttachs[index] = e.target.files[0];
+            newFieldsAttachs[index] = e;
             setDynamicFieldsAttachments(newFieldsAttachs);
         } else {
             newFields[index][fieldToUpdate] = e.target.value;
@@ -278,428 +359,462 @@ export default function VendorRegistration() {
     else
         return (
             <div className="vendor-main-container">
-                <h1>Vendor Registration</h1>
+                <h1>{title}</h1>
+
+                {commentData.length > 0 && (
+                    <TextField
+                        id="comments"
+                        label="Problem(s)"
+                        multiline
+                        rows={4}
+                        value={commentData}
+                        fullWidth
+                        variant="outlined"
+                        InputProps={{
+                            style: { color: "rgb(117 191 176)" },
+                            readOnly: true,
+                        }}
+                        InputLabelProps={{
+                            style: { color: "rgb(117 191 176)" },
+                        }}
+                    />
+                )}
+
                 <Stack component="form" onSubmit={handleSubmit}>
-                    <div className="company-details">
-                        <h2>Company Details</h2>
-                        <TextField
-                            required
-                            id="company-name"
-                            label="Company Name"
-                            value={companyName}
-                            fullWidth
-                            onChange={(e) => setCompanyName(e.target.value)}
-                        />
-                        <div className="row">
-                            <div className="col">
-                                <Autocomplete
-                                    disablePortal
-                                    id="category"
-                                    options={categories}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            required
-                                            {...params}
-                                            inputProps={{
-                                                ...params.inputProps,
-                                                autoComplete: "new-password",
-                                                style: { width: "auto" },
-                                            }}
-                                            label="Category"
-                                        />
-                                    )}
-                                    value={productCategory}
-                                    onChange={(e, newValue) =>
-                                        setProductCategory(newValue)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="contact-person-email"
-                                    label="Contact Person Email"
-                                    type="email"
-                                    value={contactPersonEmail}
-                                    onChange={(e) =>
-                                        setContactPersonEmail(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="gst"
-                                    label="GST"
-                                    value={gst}
-                                    onChange={(e) => setGst(e.target.value)}
-                                />
-                            </div>
-                            <div className="col">
-                                <TextField
-                                    required
-                                    id="contact-person-name"
-                                    label="Contact Person Name"
-                                    value={contactPersonName}
-                                    onChange={(e) =>
-                                        setContactPersonName(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="contact-person-phone"
-                                    label="Contact Person Phone"
-                                    value={contactPersonPhone}
-                                    onChange={onPhoneChange}
-                                    error={!isValidPhone}
-                                    helperText={!isValidPhone ? 'Invalid phone number' : ''}
-                                />
-                                <Box>
+                    <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                        <Grid item xs={12}>
+                            <h2>Company Details</h2>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                required
+                                id="company-name"
+                                label="Company Name"
+                                value={companyName}
+                                fullWidth
+                                onChange={(e) => setCompanyName(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Autocomplete
+                                disablePortal
+                                id="category"
+                                options={categories}
+                                renderInput={(params) => (
                                     <TextField
                                         required
-                                        id="gst-attch"
-                                        type="file"
-                                        className="file-first file-input"
-                                        onChange={(e) =>
-                                            setGstAttachment(e.target.files[0])
-                                        }
+                                        {...params}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password",
+                                            style: { width: "auto" },
+                                        }}
+                                        label="Category"
                                     />
-                                </Box>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="address">
-                        <h2>Address</h2>
-                        <TextField
-                            required
-                            className="full-width"
-                            id="address-line-1"
-                            label="Address Line 1"
-                            value={addressLine1}
-                            onChange={(e) => setAddressLine1(e.target.value)}
-                        />
-                        <TextField
-                            className="full-width"
-                            id="address-line-2"
-                            label="Address Line 2"
-                            value={addressLine2}
-                            onChange={(e) => setAddressLine2(e.target.value)}
-                        />
-                        <div className="row">
-                            <div className="col">
-                                <Autocomplete
-                                    id="country"
-                                    options={countryStateCityData}
-                                    autoHighlight
-                                    getOptionLabel={(option) =>
-                                        option.name ? option.name : ""
-                                    }
-                                    renderOption={(props, option) => (
-                                        <Box
-                                            component="li"
-                                            sx={{
-                                                "& > img": {
-                                                    mr: 2,
-                                                    flexShrink: 0,
-                                                },
-                                            }}
-                                            {...props}
-                                        >
-                                            <img
-                                                loading="lazy"
-                                                width="20"
-                                                src={`https://flagcdn.com/w20/${option.iso2.toLowerCase()}.png`}
-                                                srcSet={`https://flagcdn.com/w40/${option.iso2.toLowerCase()}.png 2x`}
-                                                alt=""
-                                            />
-                                            {option.name} ({option.iso2})
-                                        </Box>
-                                    )}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            required
-                                            {...params}
-                                            label="Choose a country"
-                                            inputProps={{
-                                                ...params.inputProps,
-                                                autoComplete: "new-password", // disable autocomplete and autofill
-                                                style: { width: "auto" },
-                                            }}
+                                )}
+                                value={productCategory}
+                                onChange={(e, newValue) =>
+                                    setProductCategory(newValue)
+                                }
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="contact-person-name"
+                                label="Contact Person Name"
+                                value={contactPersonName}
+                                onChange={(e) =>
+                                    setContactPersonName(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="contact-person-email"
+                                label="Contact Person Email"
+                                type="email"
+                                value={contactPersonEmail}
+                                onChange={(e) =>
+                                    setContactPersonEmail(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="contact-person-phone"
+                                label="Contact Person Phone"
+                                value={contactPersonPhone}
+                                onChange={onPhoneChange}
+                                error={!isValidPhone}
+                                helperText={!isValidPhone ? 'Invalid phone number' : ''}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="gst"
+                                label="GST"
+                                value={gst}
+                                onChange={(e) => setGst(e.target.value)}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="GST Attachment"
+                                file={gstAttachment}
+                                updateFile={(file) =>
+                                    setGstAttachment(file)
+                                }
+                                required={true}
+                                submit={submit}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Address</h2>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                required
+                                className="full-width"
+                                id="address-line-1"
+                                label="Address Line 1"
+                                value={addressLine1}
+                                onChange={(e) => setAddressLine1(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                className="full-width"
+                                id="address-line-2"
+                                label="Address Line 2"
+                                value={addressLine2}
+                                onChange={(e) => setAddressLine2(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Autocomplete
+                                id="country"
+                                options={countryStateCityData}
+                                autoHighlight
+                                getOptionLabel={(option) =>
+                                    option.name ? option.name : ""
+                                }
+                                renderOption={(props, option) => (
+                                    <Box
+                                        component="li"
+                                        sx={{
+                                            "& > img": {
+                                                mr: 2,
+                                                flexShrink: 0,
+                                            },
+                                        }}
+                                        {...props}
+                                    >
+                                        <img
+                                            loading="lazy"
+                                            width="20"
+                                            src={`https://flagcdn.com/w20/${option.iso2.toLowerCase()}.png`}
+                                            srcSet={`https://flagcdn.com/w40/${option.iso2.toLowerCase()}.png 2x`}
+                                            alt=""
                                         />
-                                    )}
-                                    value={country}
-                                    onChange={onCountryChange}
-                                />
-                                <Autocomplete
-                                    disablePortal
-                                    id="city"
-                                    options={cityData}
-                                    getOptionLabel={(option) =>
-                                        option.name ? option.name : ""
-                                    }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            required
-                                            {...params}
-                                            inputProps={{
-                                                ...params.inputProps,
-                                                autoComplete: "new-password",
-                                                style: { width: "auto" },
-                                            }}
-                                            label="City"
-                                        />
-                                    )}
-                                    value={city}
-                                    onChange={(e, newValue) =>
-                                        setCity(newValue)
-                                    }
-                                />
-                            </div>
-                            <div className="col">
-                                <Autocomplete
-                                    disablePortal
-                                    id="state"
-                                    options={stateCityData}
-                                    getOptionLabel={(option) =>
-                                        option.name ? option.name : ""
-                                    }
-                                    renderInput={(params) => (
-                                        <TextField
-                                            required
-                                            {...params}
-                                            inputProps={{
-                                                ...params.inputProps,
-                                                autoComplete: "new-password",
-                                                style: { width: "auto" },
-                                            }}
-                                            label="State"
-                                        />
-                                    )}
-                                    value={state}
-                                    onChange={onStateChange}
-                                />
-                                <TextField
-                                    required
-                                    label="Postal Code"
-                                    id="postal-code"
-                                    type="number"
-                                    value={postalCode}
-                                    onChange={(e) =>
-                                        setPostalCode(e.target.value)
-                                    }
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bank-details">
-                        <h2>Bank Details</h2>
-                        <div className="row">
-                            <div className="col">
-                                <TextField
-                                    required
-                                    id="beneficiary"
-                                    label="Beneficiary Name"
-                                    value={beneficiary}
-                                    onChange={(e) =>
-                                        setBeneficiary(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="ac-num"
-                                    label="Account Number"
-                                    value={accountNumber}
-                                    onChange={(e) =>
-                                        setAccountNumber(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="ifsc"
-                                    label="IFSC"
-                                    value={ifsc}
-                                    onChange={(e) => setIfsc(e.target.value)}
-                                />
-                            </div>
-                            <div className="col">
-                                <TextField
-                                    required
-                                    id="bank-name"
-                                    label="Bank Name"
-                                    value={bankName}
-                                    onChange={(e) =>
-                                        setBankName(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="branch"
-                                    label="Branch"
-                                    value={branch}
-                                    onChange={(e) => setBranch(e.target.value)}
-                                />
-                                <TextField
-                                    required
-                                    type="file"
-                                    label="Bank Proof"
-                                    id="bank-attch"
-                                    onChange={(e) =>
-                                        setBankAttachment(e.target.files[0])
-                                    }
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="other-details">
-                        <h2>Other Details</h2>
-
-                        <div className="row">
-                            <div className="col">
-                                <Box>
+                                        {option.name} ({option.iso2})
+                                    </Box>
+                                )}
+                                renderInput={(params) => (
                                     <TextField
-                                        id="msme"
-                                        label="MSME"
-                                        value={msme}
+                                        required
+                                        {...params}
+                                        label="Choose a country"
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password", // disable autocomplete and autofill
+                                            style: { width: "auto" },
+                                        }}
+                                    />
+                                )}
+                                value={country}
+                                onChange={onCountryChange}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Autocomplete
+                                disablePortal
+                                id="state"
+                                options={stateCityData}
+                                getOptionLabel={(option) =>
+                                    option.name ? option.name : ""
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        required
+                                        {...params}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password",
+                                            style: { width: "auto" },
+                                        }}
+                                        label="State"
+                                    />
+                                )}
+                                value={state}
+                                onChange={onStateChange}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Autocomplete
+                                disablePortal
+                                id="city"
+                                options={cityData}
+                                getOptionLabel={(option) =>
+                                    option.name ? option.name : ""
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        required
+                                        {...params}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password",
+                                            style: { width: "auto" },
+                                        }}
+                                        label="City"
+                                    />
+                                )}
+                                value={city}
+                                onChange={(e, newValue) =>
+                                    setCity(newValue)
+                                }
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                label="Postal Code"
+                                id="postal-code"
+                                type="number"
+                                value={postalCode}
+                                onChange={(e) =>
+                                    setPostalCode(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Bank Details</h2>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="beneficiary"
+                                label="Beneficiary Name"
+                                value={beneficiary}
+                                onChange={(e) =>
+                                    setBeneficiary(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="bank-name"
+                                label="Bank Name"
+                                value={bankName}
+                                onChange={(e) =>
+                                    setBankName(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="ac-num"
+                                label="Account Number"
+                                value={accountNumber}
+                                onChange={(e) =>
+                                    setAccountNumber(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="branch"
+                                label="Branch"
+                                value={branch}
+                                onChange={(e) => setBranch(e.target.value)}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                id="ifsc"
+                                label="IFSC"
+                                value={ifsc}
+                                onChange={(e) => setIfsc(e.target.value)}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="Bank Proof"
+                                file={bankAttachment}
+                                updateFile={(file) =>
+                                    setBankAttachment(file)
+                                }
+                                required={true}
+                                submit={submit}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Other Details</h2>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                id="msme"
+                                label="MSME"
+                                value={msme}
+                                onChange={(e) =>
+                                    setMsme(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="MSME Attachment"
+                                file={msmeAttachment}
+                                updateFile={(file) => setMsmeAttachment(file)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                id="coi"
+                                label="COI"
+                                value={coi}
+                                onChange={(e) => setCoi(e.target.value)}
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="COI Attachment"
+                                file={coiAttachment}
+                                updateFile={(file) => setCoiAttachment(file)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                id="trade-mark"
+                                label="Trade Mark"
+                                value={tradeMark}
+                                onChange={(e) =>
+                                    setTradeMark(e.target.value)
+                                }
+                                fullWidth
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="Trade Mark Attachment"
+                                file={tradeAttachment}
+                                updateFile={(file) => setTradeAttachment(file)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <h4>
+                                Signed and Stamped Agreement by Both
+                                Parties
+                            </h4>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="Agreement Attachment"
+                                file={agreementAttachment}
+                                updateFile={(file) => setAgreementAttachment(file)}
+                                required={true}
+                                submit={submit}
+                            />
+                        </Grid>
+                        {dynamicFields.map((field, index) => (
+                            <>
+                                <Grid item xs={2}>
+                                    <TextField
+                                        required
+                                        label="Key"
+                                        value={field.key}
                                         onChange={(e) =>
-                                            setMsme(e.target.value)
+                                            handleFieldChange(
+                                                e,
+                                                index,
+                                                "key"
+                                            )
                                         }
+                                        fullWidth
                                     />
+
+                                </Grid>
+                                <Grid item xs={4}>
                                     <TextField
-                                        id="coi"
-                                        label="COI"
-                                        value={coi}
-                                        onChange={(e) => setCoi(e.target.value)}
-                                    />
-                                    <TextField
-                                        id="trade-mark"
-                                        label="Trade Mark"
-                                        value={tradeMark}
+                                        label="Value"
+                                        value={field.value}
                                         onChange={(e) =>
-                                            setTradeMark(e.target.value)
+                                            handleFieldChange(
+                                                e,
+                                                index,
+                                                "value"
+                                            )
                                         }
+                                        fullWidth
                                     />
-                                    <h4>
-                                        Signed and Stamped Agreement by Both
-                                        Parties
-                                    </h4>
-                                </Box>
-                            </div>
-                            <div className="col">
-                                <TextField
-                                    type="file"
-                                    id="msme-attch"
-                                    className="file-input"
-                                    onChange={(e) =>
-                                        setMsmeAttachment(e.target.files[0])
-                                    }
-                                />
-
-                                <TextField
-                                    type="file"
-                                    id="coi-attch"
-                                    className="file-input"
-                                    onChange={(e) =>
-                                        setCoiAttachment(e.target.files[0])
-                                    }
-                                />
-                                <TextField
-                                    type="file"
-                                    id="trade-attch"
-                                    className="file-input"
-                                    onChange={(e) =>
-                                        setTradeAttachment(e.target.files[0])
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    type="file"
-                                    className="file-input"
-                                    id="msme-attch"
-                                    onChange={(e) =>
-                                        setAgreementAttachment(
-                                            e.target.files[0]
-                                        )
-                                    }
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {dynamicFields.map((field, index) => (
-                        <div key={index}>
-                            <div className="row dynamic-row">
-                                <div className="col">
-                                    <div className="row inner-dynamic">
-                                        <div className="col">
-                                            <TextField
-                                                required
-                                                label="Key"
-                                                value={field.key}
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "key"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="col">
-                                            <TextField
-                                                label="Value"
-                                                value={field.value}
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "value"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col">
-                                    <div className="row inner-dynamic-fab">
-                                        <div className="col">
-                                            <TextField
-                                                type="file"
-                                                className="file-input"
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "attachment"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="col">
-                                            <Fab
-                                                color="error"
-                                                aria-label="delete"
-                                                className="dynamic-icon"
-                                                onClick={() =>
-                                                    handleRemoveField(index)
-                                                }
-                                            >
-                                                <DeleteIcon />
-                                            </Fab>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    <Fab
-                        color="primary"
-                        className="dynamic-icon"
-                        aria-label="add"
-                        onClick={addNewField}
-                    >
-                        <AddIcon />
-                    </Fab>
-
-                    <Button variant="contained" color="primary" type="submit">
-                        Submit
-                    </Button>
+                                </Grid>
+                                <Grid item xs={5.3}>
+                                    <Attachment
+                                        label="Attachment"
+                                        file={dynamicFieldsAttachments[index]}
+                                        updateFile={(file) => handleFieldChange(file, index, "attachment")}
+                                    />
+                                </Grid>
+                                <Grid item xs={0.7}>
+                                    <Fab
+                                        color="error"
+                                        aria-label="delete"
+                                        className="dynamic-icon"
+                                        onClick={() =>
+                                            handleRemoveField(index)
+                                        }
+                                    >
+                                        <DeleteIcon />
+                                    </Fab>
+                                </Grid>
+                            </>
+                        ))}
+                        <Grid item xs={12} style={{ display: "flex", justifyContent: "center" }}>
+                            <Fab
+                                color="primary"
+                                className="dynamic-icon"
+                                aria-label="add"
+                                onClick={addNewField}
+                            >
+                                <AddIcon />
+                            </Fab>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Button variant="contained" color="primary" type="submit" fullWidth>
+                                Submit
+                            </Button>
+                        </Grid>
+                    </Grid>
                 </Stack>
             </div>
         );
