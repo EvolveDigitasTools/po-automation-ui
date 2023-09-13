@@ -3,10 +3,8 @@ import Main from "./components/main/Main";
 import VendorRegistration from "./components/main/vendorRegistration/VendorRegistration";
 import AddSKUs from "./components/main/addSKUs/AddSKUs";
 import AddBuyingOrder from "./components/main/addBuyingOrder/AddBuyingOrder";
-import AppNavBar from "./components/navbar/AppNavBar";
 import HomeLayout from "./components/layouts/HomeLayout";
 import VendorDetails from "./components/main/vendorDetails/VendorDetails";
-import Validate from "./components/validate/Validate";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
