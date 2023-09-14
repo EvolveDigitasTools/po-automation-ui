@@ -25,17 +25,17 @@ export default function Attachment({ label, file, updateFile, required, submit }
 
     return (
         <TextField
-            required = {required}
+            required={required}
             InputProps={{
                 readOnly: true,
                 endAdornment:
                     <InputAdornment position="end">
-                        <IconButton
+                        {updateFile && <IconButton
                             aria-label="Upload a file"
                             onClick={uploadFile}
                         >
                             <FileUpload />
-                        </IconButton>
+                        </IconButton>}
                         {file && <IconButton
                             aria-label="Open File"
                             onClick={viewFile}
@@ -48,7 +48,7 @@ export default function Attachment({ label, file, updateFile, required, submit }
             value={file?.name ? file.name : ""}
             fullWidth
             size='small'
-            error = { (required && submit) ? (file ? false : true) : false}
+            error={(required && submit) ? (file ? false : true) : false}
         />
     );
 };

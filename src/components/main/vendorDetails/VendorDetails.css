@@ -74,6 +74,15 @@
     height: 25px;
 }
 
+.agreementLabel h4{
+    margin: auto;
+    margin-left: 0;
+}
+
+.agreementLabel {
+    display: flex;
+}
+
 /* label[data-shrink=false]+.MuiInputBase-formControl .css-p51h6s-MuiInputBase-input-MuiOutlinedInput-input{
     padding-left: 120px;
     font-size: 14px!important;

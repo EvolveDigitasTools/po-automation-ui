@@ -13,6 +13,7 @@ import {
     Paper,
     CircularProgress,
     Typography,
+    Grid,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -21,6 +22,7 @@ import { useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
 import { CheckCircleOutline } from "@mui/icons-material";
 import { getMimeTypeFromFileName } from "../../../util";
+import Attachment from "../../attachment/Attachment";
 
 export default function VendorDetails() {
     const [title, setTitle] = useState("")
@@ -69,6 +71,15 @@ export default function VendorDetails() {
 
     //ComponentDidMount
     useEffect(() => {
+        const getFile = async (idType, id) => {
+            const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
+            const fileResponse = await fetch(fileDetailsUrl);
+            const fileJson = await fileResponse.json();
+            const file = fileJson?.data?.file
+            if (file)
+                return new File([new Blob([new Uint8Array(file.fileContent.data)])], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
+            return file;
+        }
         const checkAndUseValidationToken = async () => {
             const validateToken = params.validateToken;
 
@@ -81,11 +92,14 @@ export default function VendorDetails() {
                     console.log(vendorResponse)
                     const vendorJson = await vendorResponse.json();
                     const vendorDetails = vendorJson.data.vendor;
+                    const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
+                    const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
+                    const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
                     console.log(vendorDetails)
-                    const { isVerified, companyName, productCategory, contactPerson, gst, gstAtt, address, vendorBank, agreementAtt } = vendorDetails
-                    if(isVerified)
-                    setReviewDone(true)
-                    else {       
+                    const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank } = vendorDetails
+                    if (isVerified)
+                        setReviewDone(true)
+                    else {
                         setTitle("Verify Vendor Details")
                         setCompanyName(companyName);
                         setProductCategory(productCategory);
@@ -106,7 +120,7 @@ export default function VendorDetails() {
                         setAccountNumber(vendorBank.accountNumber)
                         setBranch(vendorBank.branch)
                         setIfsc(vendorBank.ifsc)
-                        setBankAttachment(vendorBank.proofAtt)
+                        setBankAttachment(proofAtt)
                         setAgreementAttachment(agreementAtt)
                     }
                 }
@@ -130,16 +144,16 @@ export default function VendorDetails() {
         const formData = new FormData();
         formData.append("vendorCode", vendorCode);
         formData.append("isValid", isRecordValid);
-        if(!isRecordValid)
-        formData.append("reason", denyReason);
-        
+        if (!isRecordValid)
+            formData.append("reason", denyReason);
+
         const validateVendorUrl = `${process.env.REACT_APP_SERVER_URL}vendor/validate`
         const validationResponse = await fetch(validateVendorUrl, {
             method: "POST",
             body: formData
         });
         const vendorJson = await validationResponse.json();
-        if(vendorJson.success){
+        if (vendorJson.success) {
             setReviewDone(true)
             setLoading(false)
         }
@@ -187,7 +201,7 @@ export default function VendorDetails() {
         else if (fileType == "agreementAtt")
             attachment = agreementAttachment
         // Convert buffer to Blob
-        
+
         const blob = new Blob([new Uint8Array(attachment.fileContent.data)], { type: getMimeTypeFromFileName(attachment.fileName) });
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank");
@@ -235,25 +249,29 @@ export default function VendorDetails() {
             </Container>
         );
     else
-    return (
-        <div className="vendor-main-container">
-            <h1>{title}</h1>
-            <Stack component="form" onSubmit={handleSubmit}>
-                <div className="company-details">
-                    <h2>Company Details</h2>
-                    <TextField
-                        required
-                        InputProps={{
-                            readOnly: true,
-                        }}
-                        id="company-name"
-                        label="Company Name"
-                        value={companyName}
-                        fullWidth
-                        onChange={(e) => setCompanyName(e.target.value)}
-                    />
-                    <div className="row">
-                        <div className="col">
+        return (
+            <div className="vendor-main-container">
+                <h1>{title}</h1>
+                <Stack component="form" onSubmit={handleSubmit}>
+                    <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                        <Grid item xs={12}>
+                            <h2>Company Details</h2>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                id="company-name"
+                                label="Company Name"
+                                value={companyName}
+                                fullWidth
+                                size="small"
+                                onChange={(e) => setCompanyName(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
                                 id="category"
@@ -273,9 +291,27 @@ export default function VendorDetails() {
                                         label="Category"
                                     />
                                 )}
+                                fullWidth
+                                size="small"
                                 value={productCategory}
                                 onChange={(e, newValue) => setProductCategory(newValue)}
                             />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                id="contact-person-name"
+                                label="Contact Person Name"
+                                fullWidth
+                                size="small"
+                                value={contactPersonName}
+                                onChange={(e) => setContactPersonName(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -284,31 +320,13 @@ export default function VendorDetails() {
                                 id="contact-person-email"
                                 label="Contact Person Email"
                                 type="email"
+                                fullWidth
+                                size="small"
                                 value={contactPersonEmail}
                                 onChange={(e) => setContactPersonEmail(e.target.value)}
                             />
-                            <TextField
-                                required
-                                InputProps={{
-                                    readOnly: true,
-                                }}
-                                id="gst"
-                                label="GST"
-                                value={gst}
-                                onChange={(e) => setGst(e.target.value)}
-                            />
-                        </div>
-                        <div className="col">
-                            <TextField
-                                required
-                                InputProps={{
-                                    readOnly: true,
-                                }}
-                                id="contact-person-name"
-                                label="Contact Person Name"
-                                value={contactPersonName}
-                                onChange={(e) => setContactPersonName(e.target.value)}
-                            />
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -316,48 +334,65 @@ export default function VendorDetails() {
                                 }}
                                 id="contact-person-phone"
                                 label="Contact Person Phone"
+                                fullWidth
+                                size="small"
                                 value={contactPersonPhone}
                                 onChange={(e) => setContactPersonPhone(e.target.value)}
                             />
-                            <Box>
-                                <Button
-                                    variant="contained"
-                                    className="full-width-button"
-                                    color="primary"
-                                    type="GST Attachment"
-                                    onClick={(e) => downloadAttachment(e, 'gstAtt')}
-                                >GST Attachment</Button>
-                            </Box>
-                        </div>
-                    </div>
-                </div>
-                <div className="address">
-                    <h2>Address</h2>
-                    <TextField
-                        required
-                        InputProps={{
-                            readOnly: true,
-                        }}
-                        className="full-width"
-                        id="address-line-1"
-                        label="Address Line 1"
-                        value={addressLine1}
-                        onChange={(e) => setAddressLine1(e.target.value)}
-                    />
-                    {addressLine2 &&
-                        <TextField
-                            className="full-width"
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            id="address-line-2"
-                            label="Address Line 2"
-                            value={addressLine2}
-                            onChange={(e) => setAddressLine2(e.target.value)}
-                        />
-                    }
-                    <div className="row">
-                        <div className="col">
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                id="gst"
+                                label="GST"
+                                fullWidth
+                                size="small"
+                                value={gst}
+                                onChange={(e) => setGst(e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="GST Attachment"
+                                file={gstAttachment}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Address</h2>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                fullWidth
+                                size="small"
+                                id="address-line-1"
+                                label="Address Line 1"
+                                value={addressLine1}
+                                onChange={(e) => setAddressLine1(e.target.value)}
+                            />
+                        </Grid>
+                        {addressLine2 &&
+                            <Grid item xs={12}>
+                                <TextField
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    id="address-line-2"
+                                    label="Address Line 2"
+                                    fullWidth
+                                    size="small"
+                                    value={addressLine2}
+                                    onChange={(e) => setAddressLine2(e.target.value)}
+                                />
+                            </Grid>
+                        }
+                        <Grid item xs={6}>
                             <Autocomplete
                                 id="country"
                                 InputProps={{
@@ -365,6 +400,8 @@ export default function VendorDetails() {
                                 }}
                                 options={countries}
                                 autoHighlight
+                                fullWidth
+                                size="small"
                                 renderOption={(props, option) => (
                                     <Box
                                         component="li"
@@ -402,30 +439,8 @@ export default function VendorDetails() {
                                 value={country}
                                 onChange={onCountryChange}
                             />
-                            <Autocomplete
-                                disablePortal
-                                id="city"
-                                InputProps={{
-                                    readOnly: true,
-                                }}
-                                options={cities}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        {...params}
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password",
-                                            style: { width: "auto" },
-                                        }}
-                                        label="City"
-                                    />
-                                )}
-                                value={city}
-                                onChange={(e, newValue) => setCity(newValue)}
-                            />
-                        </div>
-                        <div className="col">
+                        </Grid>
+                        <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
                                 InputProps={{
@@ -445,9 +460,39 @@ export default function VendorDetails() {
                                         label="State"
                                     />
                                 )}
+                                fullWidth
+                                size="small"
                                 value={state}
                                 onChange={onStateChange}
                             />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Autocomplete
+                                disablePortal
+                                id="city"
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                options={cities}
+                                renderInput={(params) => (
+                                    <TextField
+                                        required
+                                        {...params}
+                                        inputProps={{
+                                            ...params.inputProps,
+                                            autoComplete: "new-password",
+                                            style: { width: "auto" },
+                                        }}
+                                        label="City"
+                                    />
+                                )}
+                                fullWidth
+                                size="small"
+                                value={city}
+                                onChange={(e, newValue) => setCity(newValue)}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -455,16 +500,16 @@ export default function VendorDetails() {
                                 }}
                                 label="Postal Code"
                                 id="postal-code"
+                                fullWidth
+                                size="small"
                                 value={postalCode}
                                 onChange={(e) => setPostalCode(e.target.value)}
                             />
-                        </div>
-                    </div>
-                </div>
-                <div className="bank-details">
-                    <h2>Bank Details</h2>
-                    <div className="row">
-                        <div className="col">
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Bank Details</h2>
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -472,33 +517,13 @@ export default function VendorDetails() {
                                 }}
                                 id="beneficiary"
                                 label="Beneficiary Name"
+                                fullWidth
+                                size="small"
                                 value={beneficiary}
                                 onChange={(e) => setBeneficiary(e.target.value)}
                             />
-                            <TextField
-                                required
-                                InputProps={{
-                                    readOnly: true,
-                                }}
-                                id="ac-num"
-                                label="Account Number"
-                                value={accountNumber}
-                                onChange={(e) =>
-                                    setAccountNumber(e.target.value)
-                                }
-                            />
-                            <TextField
-                                required
-                                InputProps={{
-                                    readOnly: true,
-                                }}
-                                id="ifsc"
-                                label="IFSC"
-                                value={ifsc}
-                                onChange={(e) => setIfsc(e.target.value)}
-                            />
-                        </div>
-                        <div className="col">
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -506,9 +531,29 @@ export default function VendorDetails() {
                                 }}
                                 id="bank-name"
                                 label="Bank Name"
+                                fullWidth
+                                size="small"
                                 value={bankName}
                                 onChange={(e) => setBankName(e.target.value)}
                             />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                id="ac-num"
+                                label="Account Number"
+                                fullWidth
+                                size="small"
+                                value={accountNumber}
+                                onChange={(e) =>
+                                    setAccountNumber(e.target.value)
+                                }
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
                                 required
                                 InputProps={{
@@ -516,226 +561,246 @@ export default function VendorDetails() {
                                 }}
                                 id="branch"
                                 label="Branch"
+                                fullWidth
+                                size="small"
                                 value={branch}
                                 onChange={(e) => setBranch(e.target.value)}
                             />
-
-                            <Button
-                                variant="contained"
-                                className="full-width-button"
-                                color="primary"
-                                type="Bank Proof"
-                                onClick={(e) => downloadAttachment(e, 'bankAtt')}
-                            >Bank Proof</Button>
-
-                        </div>
-                    </div>
-                </div>
-                <div className="other-details">
-                    <h2>Other Details</h2>
-
-                    <div className="row">
-                        <div className="col">
-                            <Box>
-                                {msme && <TextField
-                                    id="msme"
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                    label="MSME"
-                                    value={msme}
-                                    onChange={(e) => setMsme(e.target.value)}
-                                />}
-                                {coi && <TextField
-                                    id="coi"
-                                    label="COI"
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                    value={coi}
-                                    onChange={(e) => setCoi(e.target.value)}
-                                />}
-                                {tradeMark && <TextField
-                                    id="trade-mark"
-                                    label="Trade Mark"
-                                    InputProps={{
-                                        readOnly: true,
-                                    }}
-                                    value={tradeMark}
-                                    onChange={(e) =>
-                                        setTradeMark(e.target.value)
-                                    }
-                                />}
-                                <h4>
-                                    Signed and Stamped Agreement by Both Parties
-                                </h4>
-                            </Box>
-                        </div>
-                        <div className="col" style={{ marginTop: '-5px!important' }}>
-
-                            {msme && <Button variant="contained" className="full-width-button" color="primary" type="MSME " onClick={(e) => downloadAttachment(e, 'msmeAtt')}>MSME</Button>}
-
-                            {coi && <Button variant="contained" className="full-width-button" color="primary" type="COI " onClick={(e) => downloadAttachment(e, 'coiAtt')}>COI</Button>}
-
-                            {tradeMark && <Button variant="contained" className="full-width-button" color="primary" type="Trade " onClick={(e) => downloadAttachment(e, 'tradeAtt')}>Trade</Button>}
-
-                            <Button
-                                variant="contained"
-                                className="full-width-button"
-                                color="primary"
-                                type="agreement"
-                                onClick={(e) => downloadAttachment(e, 'agreementAtt')}
-                            >Agreement</Button>
-
-                        </div>
-                    </div>
-                </div>
-
-                {dynamicFields.map((field, index) => (
-                    <div key={index}>
-                        <div className="row dynamic-row">
-                            <div className="col">
-                                <div className="row inner-dynamic">
-                                    <div className="col">
-                                        <TextField
-                                            required
-                                            label="Key"
-                                            InputProps={{
-                                                readOnly: true,
-                                            }}
-                                            value={field.key}
-                                            onChange={(e) =>
-                                                handleFieldChange(
-                                                    e,
-                                                    index,
-                                                    "key"
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                    <div className="col">
-                                        <TextField
-                                            label="Value"
-                                            InputProps={{
-                                                readOnly: true,
-                                            }}
-                                            value={field.value}
-                                            onChange={(e) =>
-                                                handleFieldChange(
-                                                    e,
-                                                    index,
-                                                    "value"
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col">
-                                <div className="row inner-dynamic-fab">
-                                    <div className="col">
-                                        <TextField
-                                            type="file"
-                                            InputProps={{
-                                                readOnly: true,
-                                            }}
-                                            className="file-input"
-                                            onChange={(e) =>
-                                                handleFieldChange(
-                                                    e,
-                                                    index,
-                                                    "attachment"
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                    <div className="col">
-                                        <Fab
-                                            color="error"
-                                            InputProps={{
-                                                readOnly: true,
-                                            }}
-                                            aria-label="delete"
-                                            className="dynamic-icon"
-                                            onClick={() =>
-                                                handleRemoveField(index)
-                                            }
-                                        >
-                                            <DeleteIcon />
-                                        </Fab>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-                <br />
-                <Divider />
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            color="primary"
-                            onChange={(e) => setCheckboxChecked(e.target.checked)}
-                        />
-                    }
-                    label="I confirm that I have reviewed and verified all the details and documents in this form"
-                />
-                {checkboxChecked && (
-                    <Box mt={5} display="flex" justifyContent="center">
-                        <Box mx={2}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                fullWidth
-                                style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
-                                onClick={(e) => validateNewVendor(e, true)}
-                            >
-                                Approve
-                            </Button>
-                        </Box>
-                        <Box mx={2}>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                fullWidth
-                                onClick={() => setDenyOpen(true)}
-                                style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
-                            >
-                                Reject
-                            </Button>
-                        </Box>
-                    </Box>
-                )}
-                {denyOpen && checkboxChecked && (
-                    <Box mt={5} display="flex" justifyContent="center">
-                        <Box mx={2} width="75%">
+                        </Grid>
+                        <Grid item xs={6}>
                             <TextField
-                                autoFocus
-                                margin="dense"
-                                id="deny-reason"
-                                label="Denial Reason"
-                                type="text"
+                                required
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                id="ifsc"
+                                label="IFSC"
                                 fullWidth
-                                multiline // Added multiline property
-                                rows={4} // Added rows property
-                                value={denyReason}
-                                onChange={(e) => setDenyReason(e.target.value)}
-                                style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
+                                size="small"
+                                value={ifsc}
+                                onChange={(e) => setIfsc(e.target.value)}
                             />
-                        </Box>
-                        <Box mx={2} display="flex" justifyContent="center" alignItems="center">
-                            <Button
-                                onClick={(e) => validateNewVendor(e, false)}
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="Bank Proof"
+                                file={bankAttachment}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <h2>Other Details</h2>
+                        </Grid>
+                        <Grid className="agreementLabel" item xs={6}>
+                            <h4>Signed and Stamped Agreement by Both Parties</h4>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <Attachment
+                                label="Agreement Attachment"
+                                file={agreementAttachment}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                        </Grid>
+                        <Grid item xs={6}>
+                        </Grid>
+                    </Grid>
+                    <div className="other-details">
+
+                        <div className="row">
+                            <div className="col">
+                                <Box>
+                                    {msme && <TextField
+                                        id="msme"
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
+                                        label="MSME"
+                                        value={msme}
+                                        onChange={(e) => setMsme(e.target.value)}
+                                    />}
+                                    {coi && <TextField
+                                        id="coi"
+                                        label="COI"
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
+                                        value={coi}
+                                        onChange={(e) => setCoi(e.target.value)}
+                                    />}
+                                    {tradeMark && <TextField
+                                        id="trade-mark"
+                                        label="Trade Mark"
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
+                                        value={tradeMark}
+                                        onChange={(e) =>
+                                            setTradeMark(e.target.value)
+                                        }
+                                    />}
+                                </Box>
+                            </div>
+                            <div className="col" style={{ marginTop: '-5px!important' }}>
+
+                                {msme && <Button variant="contained" className="full-width-button" color="primary" type="MSME " onClick={(e) => downloadAttachment(e, 'msmeAtt')}>MSME</Button>}
+
+                                {coi && <Button variant="contained" className="full-width-button" color="primary" type="COI " onClick={(e) => downloadAttachment(e, 'coiAtt')}>COI</Button>}
+
+                                {tradeMark && <Button variant="contained" className="full-width-button" color="primary" type="Trade " onClick={(e) => downloadAttachment(e, 'tradeAtt')}>Trade</Button>}
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {dynamicFields.map((field, index) => (
+                        <div key={index}>
+                            <div className="row dynamic-row">
+                                <div className="col">
+                                    <div className="row inner-dynamic">
+                                        <div className="col">
+                                            <TextField
+                                                required
+                                                label="Key"
+                                                InputProps={{
+                                                    readOnly: true,
+                                                }}
+                                                value={field.key}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        e,
+                                                        index,
+                                                        "key"
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <div className="col">
+                                            <TextField
+                                                label="Value"
+                                                InputProps={{
+                                                    readOnly: true,
+                                                }}
+                                                value={field.value}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        e,
+                                                        index,
+                                                        "value"
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col">
+                                    <div className="row inner-dynamic-fab">
+                                        <div className="col">
+                                            <TextField
+                                                type="file"
+                                                InputProps={{
+                                                    readOnly: true,
+                                                }}
+                                                className="file-input"
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        e,
+                                                        index,
+                                                        "attachment"
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <div className="col">
+                                            <Fab
+                                                color="error"
+                                                InputProps={{
+                                                    readOnly: true,
+                                                }}
+                                                aria-label="delete"
+                                                className="dynamic-icon"
+                                                onClick={() =>
+                                                    handleRemoveField(index)
+                                                }
+                                            >
+                                                <DeleteIcon />
+                                            </Fab>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    <br />
+                    <Divider />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
                                 color="primary"
-                                fullWidth
-                                style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
-                            >
-                                Submit
-                            </Button>
+                                onChange={(e) => setCheckboxChecked(e.target.checked)}
+                            />
+                        }
+                        label="I confirm that I have reviewed and verified all the details and documents in this form"
+                    />
+                    {checkboxChecked && (
+                        <Box mt={5} display="flex" justifyContent="center">
+                            <Box mx={2}>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    fullWidth
+                                    size="small"
+                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                    onClick={(e) => validateNewVendor(e, true)}
+                                >
+                                    Approve
+                                </Button>
+                            </Box>
+                            <Box mx={2}>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    fullWidth
+                                    size="small"
+                                    onClick={() => setDenyOpen(true)}
+                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                >
+                                    Reject
+                                </Button>
+                            </Box>
                         </Box>
-                    </Box>
-                )}
-            </Stack>
-        </div>
-    );
+                    )}
+                    {denyOpen && checkboxChecked && (
+                        <Box mt={5} display="flex" justifyContent="center">
+                            <Box mx={2} width="75%">
+                                <TextField
+                                    autoFocus
+                                    margin="dense"
+                                    id="deny-reason"
+                                    label="Denial Reason"
+                                    type="text"
+                                    fullWidth
+                                    size="small"
+                                    multiline // Added multiline property
+                                    rows={4} // Added rows property
+                                    value={denyReason}
+                                    onChange={(e) => setDenyReason(e.target.value)}
+                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
+                                />
+                            </Box>
+                            <Box mx={2} display="flex" justifyContent="center" alignItems="center">
+                                <Button
+                                    onClick={(e) => validateNewVendor(e, false)}
+                                    color="primary"
+                                    fullWidth
+                                    size="small"
+                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
+                                >
+                                    Submit
+                                </Button>
+                            </Box>
+                        </Box>
+                    )}
+                </Stack>
+            </div>
+        );
 }
