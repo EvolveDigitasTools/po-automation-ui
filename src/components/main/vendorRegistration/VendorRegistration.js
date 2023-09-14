@@ -77,8 +77,6 @@ export default function VendorRegistration() {
         "Grocery",
     ];
 
-    console.log('gstAttach', gstAttachment)
-
     //ComponentDidMount
     useEffect(() => {
         const checkAndUseValidationToken = async () => {
@@ -86,19 +84,15 @@ export default function VendorRegistration() {
 
             if (validateToken) {
                 const decodedToken = jwtDecode(validateToken);
-                console.log(decodedToken)
                 if (decodedToken.type == "vendor-fail") {
                     const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
                     const vendorResponse = await fetch(getVendorDetailsUrl);
-                    console.log(vendorResponse)
                     const vendorJson = await vendorResponse.json();
                     const vendorDetails = vendorJson.data.vendor;
-                    console.log(vendorDetails)
                     const { isVerified, companyName, comments, productCategory, contactPerson, gst, gstAtt, address, vendorBank, agreementAtt } = vendorDetails
                     setTitle("Update Vendor Details")
                     let comment = ""
                     comments.forEach(commentData => comment = comment.concat(commentData.comment + "\n"));
-                    console.log("comment", comment, comments)
                     setCommentData(comment)
                     setCompanyName(companyName);
                     setProductCategory(productCategory);
@@ -108,31 +102,29 @@ export default function VendorRegistration() {
                     setGst(gst);
                     let blob = new Blob([new Uint8Array(gstAtt.fileContent.data)]);
                     const gstFile = new File([blob], gstAtt.fileName, { type: getMimeTypeFromFileName(gstAtt.fileName) });
-                    console.log(gstFile)
                     setGstAttachment(gstFile);
                     setAddressLine1(address.addressLine1)
                     if (address.addressLine2)
                         setAddressLine2(address.addressLine2)
-                    console.log(countryStateCityData, address)
                     const tempCountry = countryStateCityData.find(country => country.name == address.country)
                     setCountry(tempCountry)
-                    if(tempCountry.states.length > 0) {
+                    if (tempCountry.states.length > 0) {
                         setStateCityData(tempCountry.states)
                         const tempState = tempCountry.states.find(state => state.name == address.state)
                         setState(tempState)
-                        if(tempState.cities.length > 0) {
+                        if (tempState.cities.length > 0) {
                             setCityData(tempState.cities)
                             const tempCity = tempState.cities.find(city => city.name == address.city)
                             setCity(tempCity)
                         }
-                        else{
+                        else {
                             setCityData([{ name: "Not Applicable" }])
                             setCity({ name: "Not Applicable" })
                         }
                     }
                     else {
                         setStateCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }])
-                        setState({ name: "Not Applicable", cities: [{ name: "Not Applicable" }]})
+                        setState({ name: "Not Applicable", cities: [{ name: "Not Applicable" }] })
                         setCityData([{ name: "Not Applicable" }])
                         setCity({ name: "Not Applicable" })
                     }
@@ -170,7 +162,7 @@ export default function VendorRegistration() {
         return () => {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
-            console.log("Component unmounted");
+            // console.log("Component unmounted");
         };
     }, []);
 
@@ -222,7 +214,7 @@ export default function VendorRegistration() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if(!gstAttachment || !bankAttachment || !agreementAttachment){
+        if (!gstAttachment || !bankAttachment || !agreementAttachment) {
             setSubmit(true)
             return
         }
@@ -272,9 +264,9 @@ export default function VendorRegistration() {
 
         // Data is valid, make an API request to send the data
         // Example using fetch API
-        for (var key of formData.entries()) {
-            console.log(key[0] + ", " + key[1]);
-        }
+        // for (var key of formData.entries()) {
+        //     console.log(key[0] + ", " + key[1]);
+        // }
         fetch(`${process.env.REACT_APP_SERVER_URL}vendor/new`, {
             method: "POST",
             body: formData,
@@ -283,7 +275,7 @@ export default function VendorRegistration() {
             .then((data) => {
                 setIsDetailSubmitted(true);
                 setLoading(false);
-                console.log("API response:", data);
+                // console.log("API response:", data);
                 // Handle the response as needed
             })
             .catch((error) => {
@@ -369,6 +361,7 @@ export default function VendorRegistration() {
                         rows={4}
                         value={commentData}
                         fullWidth
+                        size="small"
                         variant="outlined"
                         InputProps={{
                             style: { color: "rgb(117 191 176)" },
@@ -392,12 +385,14 @@ export default function VendorRegistration() {
                                 label="Company Name"
                                 value={companyName}
                                 fullWidth
+                                size="small"
                                 onChange={(e) => setCompanyName(e.target.value)}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
+                                size="small"
                                 id="category"
                                 options={categories}
                                 renderInput={(params) => (
@@ -428,6 +423,7 @@ export default function VendorRegistration() {
                                     setContactPersonName(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -441,6 +437,7 @@ export default function VendorRegistration() {
                                     setContactPersonEmail(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -453,6 +450,7 @@ export default function VendorRegistration() {
                                 error={!isValidPhone}
                                 helperText={!isValidPhone ? 'Invalid phone number' : ''}
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -463,6 +461,7 @@ export default function VendorRegistration() {
                                 value={gst}
                                 onChange={(e) => setGst(e.target.value)}
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -482,16 +481,18 @@ export default function VendorRegistration() {
                         <Grid item xs={12}>
                             <TextField
                                 required
-                                className="full-width"
                                 id="address-line-1"
                                 label="Address Line 1"
                                 value={addressLine1}
+                                fullWidth
+                                size="small"
                                 onChange={(e) => setAddressLine1(e.target.value)}
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
-                                className="full-width"
+                                fullWidth
+                                size="small"
                                 id="address-line-2"
                                 label="Address Line 2"
                                 value={addressLine2}
@@ -539,6 +540,7 @@ export default function VendorRegistration() {
                                         }}
                                     />
                                 )}
+                                size="small"
                                 value={country}
                                 onChange={onCountryChange}
                             />
@@ -546,6 +548,7 @@ export default function VendorRegistration() {
                         <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
+                                size="small"
                                 id="state"
                                 options={stateCityData}
                                 getOptionLabel={(option) =>
@@ -570,6 +573,7 @@ export default function VendorRegistration() {
                         <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
+                                size="small"
                                 id="city"
                                 options={cityData}
                                 getOptionLabel={(option) =>
@@ -604,6 +608,7 @@ export default function VendorRegistration() {
                                     setPostalCode(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={12}>
@@ -619,6 +624,7 @@ export default function VendorRegistration() {
                                     setBeneficiary(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -631,6 +637,7 @@ export default function VendorRegistration() {
                                     setBankName(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -643,6 +650,7 @@ export default function VendorRegistration() {
                                     setAccountNumber(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -653,6 +661,7 @@ export default function VendorRegistration() {
                                 value={branch}
                                 onChange={(e) => setBranch(e.target.value)}
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -663,6 +672,7 @@ export default function VendorRegistration() {
                                 value={ifsc}
                                 onChange={(e) => setIfsc(e.target.value)}
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -688,6 +698,7 @@ export default function VendorRegistration() {
                                     setMsme(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -704,6 +715,7 @@ export default function VendorRegistration() {
                                 value={coi}
                                 onChange={(e) => setCoi(e.target.value)}
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -722,6 +734,7 @@ export default function VendorRegistration() {
                                     setTradeMark(e.target.value)
                                 }
                                 fullWidth
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -761,6 +774,7 @@ export default function VendorRegistration() {
                                             )
                                         }
                                         fullWidth
+                                        size="small"
                                     />
 
                                 </Grid>
@@ -776,6 +790,7 @@ export default function VendorRegistration() {
                                             )
                                         }
                                         fullWidth
+                                        size="small"
                                     />
                                 </Grid>
                                 <Grid item xs={5.3}>
@@ -810,7 +825,8 @@ export default function VendorRegistration() {
                             </Fab>
                         </Grid>
                         <Grid item xs={12}>
-                            <Button variant="contained" color="primary" type="submit" fullWidth>
+                            <Button variant="contained" color="primary" type="submit" fullWidth
+                                size="small">
                                 Submit
                             </Button>
                         </Grid>

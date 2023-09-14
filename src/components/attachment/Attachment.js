@@ -25,7 +25,7 @@ export default function Attachment({ label, file, updateFile, required, submit }
 
     return (
         <TextField
-            required
+            required = {required}
             InputProps={{
                 readOnly: true,
                 endAdornment:
@@ -47,6 +47,7 @@ export default function Attachment({ label, file, updateFile, required, submit }
             label={label}
             value={file?.name ? file.name : ""}
             fullWidth
+            size='small'
             error = { (required && submit) ? (file ? false : true) : false}
         />
     );
