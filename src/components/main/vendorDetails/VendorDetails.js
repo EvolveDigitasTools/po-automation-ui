@@ -139,21 +139,18 @@ export default function VendorDetails() {
                         setIfsc(vendorBank.ifsc)
                         setBankAttachment(proofAtt)
                         setAgreementAttachment(agreementAtt)
-                        if (msme) {
-                            let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                        if (msme)
                             setMsme(msme)
-                            setMsmeAttachment(msmeAtt)
-                        }
-                        if (coi) {
-                            let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                        let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                        setMsmeAttachment(msmeAtt)
+                        if (coi)
                             setCoi(coi)
-                            setCoiAttachment(coiAtt)
-                        }
-                        if (tradeMark) {
-                            let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                        let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                        setCoiAttachment(coiAtt)
+                        if (tradeMark)
                             setTradeMark(tradeMark)
-                            setTradeAttachment(tradeMarkAtt)
-                        }
+                        let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                        setTradeAttachment(tradeMarkAtt)
                         if (otherFields && otherFields.length > 0) {
                             let dynamicFieldsAttachs = []
                             for (let i = 0; i < otherFields.length; i++) {
@@ -631,7 +628,7 @@ export default function VendorDetails() {
                         <Grid item xs={12}>
                             <h2>Other Details</h2>
                         </Grid>
-                        {msme &&
+                        {(msme || msmeAttachment) &&
                             <Grid item xs={6}>
                                 <TextField
                                     id="msme"
@@ -646,7 +643,7 @@ export default function VendorDetails() {
                                 />
                             </Grid>
                         }
-                        {msme &&
+                        {(msme || msmeAttachment) &&
                             <Grid item xs={6}>
                                 <Attachment
                                     label="MSME Attachment"
@@ -654,7 +651,7 @@ export default function VendorDetails() {
                                 />
                             </Grid>
                         }
-                        {coi &&
+                        {(coi || coiAttachment) &&
                             <Grid item xs={6}>
                                 <TextField
                                     id="coi"
@@ -669,7 +666,7 @@ export default function VendorDetails() {
                                 />
                             </Grid>
                         }
-                        {coi &&
+                        {(coi || coiAttachment) &&
                             <Grid item xs={6}>
                                 <Attachment
                                     label="COI Attachment"
@@ -677,7 +674,7 @@ export default function VendorDetails() {
                                 />
                             </Grid>
                         }
-                        {tradeMark &&
+                        {(tradeMark || tradeAttachment) &&
                             <Grid item xs={6}>
                                 <TextField
                                     id="trade-mark"
@@ -692,7 +689,7 @@ export default function VendorDetails() {
                                 />
                             </Grid>
                         }
-                        {tradeMark &&
+                        {(tradeMark || tradeAttachment) &&
                             <Grid item xs={6}>
                                 <Attachment
                                     label="Trade Mark Attachment"

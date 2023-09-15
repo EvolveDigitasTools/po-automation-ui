@@ -168,21 +168,18 @@ export default function VendorRegistration() {
                     setIfsc(vendorBank.ifsc)
                     setBankAttachment(proofAtt)
                     setAgreementAttachment(agreementAtt)
-                    if (msme) {
-                        let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                    if (msme)
                         setMsme(msme)
-                        setMsmeAttachment(msmeAtt)
-                    }
-                    if (coi) {
-                        let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                    let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                    setMsmeAttachment(msmeAtt)
+                    if (coi)
                         setCoi(coi)
-                        setCoiAttachment(coiAtt)
-                    }
-                    if (tradeMark) {
-                        let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                    let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                    setCoiAttachment(coiAtt)
+                    if (tradeMark)
                         setTradeMark(tradeMark)
-                        setTradeAttachment(tradeMarkAtt)
-                    }
+                    let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                    setTradeAttachment(tradeMarkAtt)
                     if (otherFields && otherFields.length > 0) {
                         let dynamicFieldsAttachs = []
                         for (let i = 0; i < otherFields.length; i++) {
@@ -328,7 +325,7 @@ export default function VendorRegistration() {
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    if(data.success){
+                    if (data.success) {
                         setIsDetailSubmitted(true);
                         setLoading(false);
                     }
