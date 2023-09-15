@@ -71,12 +71,12 @@ export default function Main() {
 
     function addSKUs() {
         if (selectedRow) navigate(`/new-skus/${selectedRow}`);
-        else navigate(`/new-skus/new`);
+        else navigate(`/admin/new-skus/new`);
     }
 
     function addBuyingOrder() {
-        if (selectedRow) navigate(`/new-buying-order/${selectedRow}`);
-        else navigate(`/new-buying-order/new`);
+        if (selectedRow) navigate(`/admin/new-buying-order/${selectedRow}`);
+        else navigate(`/admin/new-buying-order/new`);
     }
 
     const handleChangePage = (event, newPage) => {
