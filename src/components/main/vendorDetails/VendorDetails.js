@@ -105,7 +105,7 @@ export default function VendorDetails() {
 
             if (validateToken) {
                 const decodedToken = jwtDecode(validateToken);
-                if (decodedToken.type == "new-vendor") {
+                if (decodedToken.type == "new-vendor" || decodedToken.type == "update-vendor") {
                     const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
                     const vendorResponse = await fetch(getVendorDetailsUrl);
                     const vendorJson = await vendorResponse.json();

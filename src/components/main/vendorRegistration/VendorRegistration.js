@@ -29,6 +29,7 @@ export default function VendorRegistration() {
     const [title, setTitle] = useState("Vendor Registration");
     const [commentData, setCommentData] = useState("");
     const [submit, setSubmit] = useState(false)
+    const [vendorCode, setVendorCode] = useState("")
     const params = useParams();
 
     const [companyName, setCompanyName] = useState("");
@@ -79,7 +80,37 @@ export default function VendorRegistration() {
 
     //ComponentDidMount
     useEffect(() => {
-        const checkAndUseValidationToken = async () => {
+        function binaryStringToBlob(binaryString, mimeType) {
+            // Step 1: Convert the binary string to an array of integers.
+            const byteCharacters = atob(binaryString);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+
+            // Step 2: Create a Uint8Array from the array of integers.
+            const byteArray = new Uint8Array(byteNumbers);
+
+            // Step 3: Create a Blob from the Uint8Array.
+            return new Blob([byteArray], { type: mimeType });
+        }
+
+        const getFile = async (idType, id) => {
+            try {
+                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
+                const fileResponse = await fetch(fileDetailsUrl);
+                const fileJson = await fileResponse.json();
+                const file = await fileJson?.data?.file
+                if (file)
+                    return new File([binaryStringToBlob(file.fileContent, getMimeTypeFromFileName(file.fileName))], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
+                return file;
+            }
+            catch {
+                return null;
+            }
+        }
+
+        const checkAndUseValidationToken = async (countryStateCityData) => {
             const validateToken = params.validateToken;
 
             if (validateToken) {
@@ -89,26 +120,27 @@ export default function VendorRegistration() {
                     const vendorResponse = await fetch(getVendorDetailsUrl);
                     const vendorJson = await vendorResponse.json();
                     const vendorDetails = vendorJson.data.vendor;
-                    const { isVerified, companyName, comments, productCategory, contactPerson, gst, gstAtt, address, vendorBank, agreementAtt } = vendorDetails
+                    const { companyName, comments, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
                     setTitle("Update Vendor Details")
                     let comment = ""
                     comments.forEach(commentData => comment = comment.concat(commentData.comment + "\n"));
                     setCommentData(comment)
+                    const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
+                    const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
+                    const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
                     setCompanyName(companyName);
                     setProductCategory(productCategory);
                     setContactPersonName(contactPerson.name);
                     setContactPersonEmail(contactPerson.email);
                     setContactPersonPhone(contactPerson.phoneNumber);
                     setGst(gst);
-                    let blob = new Blob([new Uint8Array(gstAtt.fileContent.data)]);
-                    const gstFile = new File([blob], gstAtt.fileName, { type: getMimeTypeFromFileName(gstAtt.fileName) });
-                    setGstAttachment(gstFile);
+                    setGstAttachment(gstAtt);
                     setAddressLine1(address.addressLine1)
                     if (address.addressLine2)
                         setAddressLine2(address.addressLine2)
                     const tempCountry = countryStateCityData.find(country => country.name == address.country)
                     setCountry(tempCountry)
-                    if (tempCountry.states.length > 0) {
+                    if (tempCountry?.states.length > 0) {
                         setStateCityData(tempCountry.states)
                         const tempState = tempCountry.states.find(state => state.name == address.state)
                         setState(tempState)
@@ -134,14 +166,35 @@ export default function VendorRegistration() {
                     setAccountNumber(vendorBank.accountNumber)
                     setBranch(vendorBank.branch)
                     setIfsc(vendorBank.ifsc)
-                    blob = new Blob([new Uint8Array(vendorBank.proofAtt.fileContent.data)]);
-                    const bankAttFile = new File([blob], vendorBank.proofAtt.fileName, { type: getMimeTypeFromFileName(vendorBank.proofAtt.fileName) });
-                    setBankAttachment(bankAttFile)
-                    blob = new Blob([new Uint8Array(agreementAtt.fileContent.data)]);
-                    const agreementAttFile = new File([blob], agreementAtt.fileName, { type: getMimeTypeFromFileName(agreementAtt.fileName) });
-                    setAgreementAttachment(agreementAttFile)
+                    setBankAttachment(proofAtt)
+                    setAgreementAttachment(agreementAtt)
+                    if (msme) {
+                        let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                        setMsme(msme)
+                        setMsmeAttachment(msmeAtt)
+                    }
+                    if (coi) {
+                        let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                        setCoi(coi)
+                        setCoiAttachment(coiAtt)
+                    }
+                    if (tradeMark) {
+                        let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                        setTradeMark(tradeMark)
+                        setTradeAttachment(tradeMarkAtt)
+                    }
+                    if (otherFields && otherFields.length > 0) {
+                        let dynamicFieldsAttachs = []
+                        for (let i = 0; i < otherFields.length; i++) {
+                            const otherField = otherFields[i];
+                            let otherAttach = await getFile('vendorOtherId', otherField.id)
+                            dynamicFieldsAttachs.push(otherAttach)
+                        }
+                        setDynamicFieldsAttachments(dynamicFieldsAttachs)
+                        setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
+                    }
                 }
-                // setVendorCode(decodedToken.vendorCode)
+                setVendorCode(decodedToken.vendorCode)
             }
         }
 
@@ -150,11 +203,12 @@ export default function VendorRegistration() {
             const dataResponse = await fetch(countryStateCityDataURL)
             const data = await dataResponse.json();
             setCountryStateCityData(data);
+            return data;
         }
 
         const asyncUseEffect = async () => {
-            await getCountryStateCitydata();
-            await checkAndUseValidationToken();
+            let countryStateCityData = await getCountryStateCitydata();
+            await checkAndUseValidationToken(countryStateCityData);
             setLoading(false)
         }
         asyncUseEffect()
@@ -267,21 +321,37 @@ export default function VendorRegistration() {
         // for (var key of formData.entries()) {
         //     console.log(key[0] + ", " + key[1]);
         // }
-        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/new`, {
-            method: "POST",
-            body: formData,
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setIsDetailSubmitted(true);
-                setLoading(false);
-                // console.log("API response:", data);
-                // Handle the response as needed
+        if (vendorCode && vendorCode.length > 0) {
+            fetch(`${process.env.REACT_APP_SERVER_URL}vendor/update/${vendorCode}`, {
+                method: "PUT",
+                body: formData
             })
-            .catch((error) => {
-                console.error("API error:", error);
-                // Handle the error
-            });
+                .then((response) => response.json())
+                .then((data) => {
+                    if(data.success){
+                        setIsDetailSubmitted(true);
+                        setLoading(false);
+                    }
+                })
+                .catch(error => console.error(error))
+        }
+        else {
+            fetch(`${process.env.REACT_APP_SERVER_URL}vendor/new`, {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setIsDetailSubmitted(true);
+                    setLoading(false);
+                    // console.log("API response:", data);
+                    // Handle the response as needed
+                })
+                .catch((error) => {
+                    console.error("API error:", error);
+                    // Handle the error
+                });
+        }
     };
 
     const handleFieldChange = (e, index, fieldToUpdate) => {
@@ -808,6 +878,7 @@ export default function VendorRegistration() {
                                         onClick={() =>
                                             handleRemoveField(index)
                                         }
+                                        size="small"
                                     >
                                         <DeleteIcon />
                                     </Fab>
@@ -820,6 +891,7 @@ export default function VendorRegistration() {
                                 className="dynamic-icon"
                                 aria-label="add"
                                 onClick={addNewField}
+                                size="small"
                             >
                                 <AddIcon />
                             </Fab>
