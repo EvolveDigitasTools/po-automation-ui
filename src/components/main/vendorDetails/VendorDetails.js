@@ -71,32 +71,49 @@ export default function VendorDetails() {
 
     //ComponentDidMount
     useEffect(() => {
+        function binaryStringToBlob(binaryString, mimeType) {
+            // Step 1: Convert the binary string to an array of integers.
+            const byteCharacters = atob(binaryString);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+
+            // Step 2: Create a Uint8Array from the array of integers.
+            const byteArray = new Uint8Array(byteNumbers);
+
+            // Step 3: Create a Blob from the Uint8Array.
+            return new Blob([byteArray], { type: mimeType });
+        }
+
         const getFile = async (idType, id) => {
-            const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
-            const fileResponse = await fetch(fileDetailsUrl);
-            const fileJson = await fileResponse.json();
-            const file = fileJson?.data?.file
-            if (file)
-                return new File([new Blob([new Uint8Array(file.fileContent.data)])], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
-            return file;
+            try {
+                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
+                const fileResponse = await fetch(fileDetailsUrl);
+                const fileJson = await fileResponse.json();
+                const file = await fileJson?.data?.file
+                if (file)
+                    return new File([binaryStringToBlob(file.fileContent, getMimeTypeFromFileName(file.fileName))], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
+                return file;
+            }
+            catch {
+                return null;
+            }
         }
         const checkAndUseValidationToken = async () => {
             const validateToken = params.validateToken;
 
             if (validateToken) {
                 const decodedToken = jwtDecode(validateToken);
-                console.log(decodedToken)
                 if (decodedToken.type == "new-vendor") {
                     const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
                     const vendorResponse = await fetch(getVendorDetailsUrl);
-                    console.log(vendorResponse)
                     const vendorJson = await vendorResponse.json();
                     const vendorDetails = vendorJson.data.vendor;
                     const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
                     const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
                     const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
-                    console.log(vendorDetails)
-                    const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank } = vendorDetails
+                    const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
                     if (isVerified)
                         setReviewDone(true)
                     else {
@@ -122,6 +139,31 @@ export default function VendorDetails() {
                         setIfsc(vendorBank.ifsc)
                         setBankAttachment(proofAtt)
                         setAgreementAttachment(agreementAtt)
+                        if (msme) {
+                            let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                            setMsme(msme)
+                            setMsmeAttachment(msmeAtt)
+                        }
+                        if (coi) {
+                            let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                            setCoi(coi)
+                            setCoiAttachment(coiAtt)
+                        }
+                        if (tradeMark) {
+                            let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                            setTradeMark(tradeMark)
+                            setTradeAttachment(tradeMarkAtt)
+                        }
+                        if (otherFields && otherFields.length > 0) {
+                            let dynamicFieldsAttachs = []
+                            for (let i = 0; i < otherFields.length; i++) {
+                                const otherField = otherFields[i];
+                                let otherAttach = await getFile('vendorOtherId', otherField.id)
+                                dynamicFieldsAttachs.push(otherAttach)
+                            }
+                            setDynamicFieldsAttachments(dynamicFieldsAttachs)
+                            setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
+                        }
                     }
                 }
                 setVendorCode(decodedToken.vendorCode)
@@ -134,7 +176,6 @@ export default function VendorDetails() {
         return () => {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
-            console.log("Component unmounted");
         };
     }, []);
 
@@ -590,6 +631,75 @@ export default function VendorDetails() {
                         <Grid item xs={12}>
                             <h2>Other Details</h2>
                         </Grid>
+                        {msme &&
+                            <Grid item xs={6}>
+                                <TextField
+                                    id="msme"
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    label="MSME"
+                                    value={msme}
+                                    fullWidth
+                                    size="small"
+                                    onChange={(e) => setMsme(e.target.value)}
+                                />
+                            </Grid>
+                        }
+                        {msme &&
+                            <Grid item xs={6}>
+                                <Attachment
+                                    label="MSME Attachment"
+                                    file={msmeAttachment}
+                                />
+                            </Grid>
+                        }
+                        {coi &&
+                            <Grid item xs={6}>
+                                <TextField
+                                    id="coi"
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    label="COI"
+                                    value={coi}
+                                    fullWidth
+                                    size="small"
+                                    onChange={(e) => setCoi(e.target.value)}
+                                />
+                            </Grid>
+                        }
+                        {coi &&
+                            <Grid item xs={6}>
+                                <Attachment
+                                    label="COI Attachment"
+                                    file={coiAttachment}
+                                />
+                            </Grid>
+                        }
+                        {tradeMark &&
+                            <Grid item xs={6}>
+                                <TextField
+                                    id="trade-mark"
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    label="Trade Mark"
+                                    value={tradeMark}
+                                    fullWidth
+                                    size="small"
+                                    onChange={(e) => setTradeMark(e.target.value)}
+                                />
+                            </Grid>
+                        }
+                        {tradeMark &&
+                            <Grid item xs={6}>
+                                <Attachment
+                                    label="Trade Mark Attachment"
+                                    file={tradeAttachment}
+                                />
+                            </Grid>
+                        }
                         <Grid className="agreementLabel" item xs={6}>
                             <h4>Signed and Stamped Agreement by Both Parties</h4>
                         </Grid>
@@ -603,133 +713,28 @@ export default function VendorDetails() {
                         </Grid>
                         <Grid item xs={6}>
                         </Grid>
+                        {dynamicFields.map((field, index) => (
+                            <>
+                                <Grid item xs={6}>
+                                    <TextField
+                                        label={field.key}
+                                        value={field.value}
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Attachment
+                                        label="Attachment"
+                                        file={dynamicFieldsAttachments[index]}
+                                    />
+                                </Grid>
+                            </>
+                        ))}
                     </Grid>
-                    <div className="other-details">
-
-                        <div className="row">
-                            <div className="col">
-                                <Box>
-                                    {msme && <TextField
-                                        id="msme"
-                                        InputProps={{
-                                            readOnly: true,
-                                        }}
-                                        label="MSME"
-                                        value={msme}
-                                        onChange={(e) => setMsme(e.target.value)}
-                                    />}
-                                    {coi && <TextField
-                                        id="coi"
-                                        label="COI"
-                                        InputProps={{
-                                            readOnly: true,
-                                        }}
-                                        value={coi}
-                                        onChange={(e) => setCoi(e.target.value)}
-                                    />}
-                                    {tradeMark && <TextField
-                                        id="trade-mark"
-                                        label="Trade Mark"
-                                        InputProps={{
-                                            readOnly: true,
-                                        }}
-                                        value={tradeMark}
-                                        onChange={(e) =>
-                                            setTradeMark(e.target.value)
-                                        }
-                                    />}
-                                </Box>
-                            </div>
-                            <div className="col" style={{ marginTop: '-5px!important' }}>
-
-                                {msme && <Button variant="contained" className="full-width-button" color="primary" type="MSME " onClick={(e) => downloadAttachment(e, 'msmeAtt')}>MSME</Button>}
-
-                                {coi && <Button variant="contained" className="full-width-button" color="primary" type="COI " onClick={(e) => downloadAttachment(e, 'coiAtt')}>COI</Button>}
-
-                                {tradeMark && <Button variant="contained" className="full-width-button" color="primary" type="Trade " onClick={(e) => downloadAttachment(e, 'tradeAtt')}>Trade</Button>}
-
-                            </div>
-                        </div>
-                    </div>
-
-                    {dynamicFields.map((field, index) => (
-                        <div key={index}>
-                            <div className="row dynamic-row">
-                                <div className="col">
-                                    <div className="row inner-dynamic">
-                                        <div className="col">
-                                            <TextField
-                                                required
-                                                label="Key"
-                                                InputProps={{
-                                                    readOnly: true,
-                                                }}
-                                                value={field.key}
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "key"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="col">
-                                            <TextField
-                                                label="Value"
-                                                InputProps={{
-                                                    readOnly: true,
-                                                }}
-                                                value={field.value}
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "value"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col">
-                                    <div className="row inner-dynamic-fab">
-                                        <div className="col">
-                                            <TextField
-                                                type="file"
-                                                InputProps={{
-                                                    readOnly: true,
-                                                }}
-                                                className="file-input"
-                                                onChange={(e) =>
-                                                    handleFieldChange(
-                                                        e,
-                                                        index,
-                                                        "attachment"
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="col">
-                                            <Fab
-                                                color="error"
-                                                InputProps={{
-                                                    readOnly: true,
-                                                }}
-                                                aria-label="delete"
-                                                className="dynamic-icon"
-                                                onClick={() =>
-                                                    handleRemoveField(index)
-                                                }
-                                            >
-                                                <DeleteIcon />
-                                            </Fab>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
                     <br />
                     <Divider />
                     <FormControlLabel

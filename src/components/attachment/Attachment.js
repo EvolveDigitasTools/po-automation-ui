@@ -17,8 +17,11 @@ export default function Attachment({ label, file, updateFile, required, submit }
 
     const viewFile = () => {
         const url = URL.createObjectURL(file);
+        // const a = document.createElement("a");
+        // a.href = url;
+        // a.download = file.name;
+        // a.click();
         window.open(url, "_blank");
-
         // Clean up by revoking the Blob URL
         URL.revokeObjectURL(url);
     }
