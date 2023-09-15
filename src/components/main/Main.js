@@ -62,11 +62,11 @@ export default function Main() {
     }, []);
 
     function vendorRegistration() {
-        navigate("/");
+        navigate("/admin/vendor-registration");
     }
 
-    function showDetails() {
-        navigate(`/vendor/${selectedRow}`);
+    function showDetails(vendorRow) {
+        navigate(`/admin/vendor/${vendorRow}`);
     }
 
     function addSKUs() {
@@ -149,6 +149,10 @@ export default function Main() {
                                                     row.vendorCode
                                                 )
                                             }
+                                            onDoubleClick={() => {
+                                                showDetails(row.vendorCode)
+                                            }}
+                                            
                                         >
                                             {columns.map((column) => {
                                                 const value = row[column.id];

@@ -13,12 +13,13 @@ import {
     Typography,
     CircularProgress,
     Grid,
+    IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "./vendorRegistration.css";
-import { CheckCircleOutline } from "@mui/icons-material";
-import { useParams } from "react-router-dom";
+import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
+import { Link, useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
 import Attachment from "../../attachment/Attachment";
 import { getMimeTypeFromFileName } from "../../../util";
@@ -30,6 +31,7 @@ export default function VendorRegistration() {
     const [commentData, setCommentData] = useState("");
     const [submit, setSubmit] = useState(false)
     const [vendorCode, setVendorCode] = useState("")
+    let [email, setEmail] = useState(null);
     const params = useParams();
 
     const [companyName, setCompanyName] = useState("");
@@ -193,6 +195,9 @@ export default function VendorRegistration() {
                 }
                 setVendorCode(decodedToken.vendorCode)
             }
+            else if (window.location.pathname == "/admin/vendor-registration") {
+                setEmail('')
+            }
         }
 
         const getCountryStateCitydata = async () => {
@@ -290,6 +295,8 @@ export default function VendorRegistration() {
         formData.append("ifsc", ifsc);
         formData.append("bankName", bankName);
         formData.append("branch", branch);
+        if(email)
+        formData.append("createdBy", email)
         if (coi.length > 0) formData.append("coi", coi);
         if (msme.length > 0) formData.append("msme", msme);
         if (tradeMark.length > 0) formData.append("tradeMark", tradeMark);
@@ -418,6 +425,16 @@ export default function VendorRegistration() {
     else
         return (
             <div className="vendor-main-container">
+                {window.location.pathname == "/admin/vendor-registration" && <Link to="/admin">
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        aria-label="back"
+                    // onClick={() => handleBack()}
+                    >
+                        <ArrowBack />Back
+                    </IconButton>
+                </Link>}
                 <h1>{title}</h1>
 
                 {commentData.length > 0 && (
@@ -811,7 +828,7 @@ export default function VendorRegistration() {
                                 updateFile={(file) => setTradeAttachment(file)}
                             />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid item className="agreementLabel" xs={6}>
                             <h4>
                                 Signed and Stamped Agreement by Both
                                 Parties
@@ -882,6 +899,25 @@ export default function VendorRegistration() {
                                 </Grid>
                             </>
                         ))}
+                        {email?.length >= 0 &&
+                            <Grid item xs={6}>
+                                <TextField
+                                    required
+                                    id="email"
+                                    label="Your Email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) =>
+                                        setEmail(e.target.value)
+                                    }
+                                    fullWidth
+                                    size="small"
+                                />
+                            </Grid>
+                        }
+                        {email?.length >= 0 &&
+                            <Grid item xs={6}></Grid>
+                        }
                         <Grid item xs={12} style={{ display: "flex", justifyContent: "center" }}>
                             <Fab
                                 color="primary"

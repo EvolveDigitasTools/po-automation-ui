@@ -14,13 +14,14 @@ import {
     CircularProgress,
     Typography,
     Grid,
+    IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "./VendorDetails.css";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
-import { CheckCircleOutline } from "@mui/icons-material";
+import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
 import { getMimeTypeFromFileName } from "../../../util";
 import Attachment from "../../attachment/Attachment";
 
@@ -102,68 +103,70 @@ export default function VendorDetails() {
         }
         const checkAndUseValidationToken = async () => {
             const validateToken = params.validateToken;
-
-            if (validateToken) {
+            let vendorCode = params.vendorCode;
+            if (!vendorCode && validateToken) {
                 const decodedToken = jwtDecode(validateToken);
-                if (decodedToken.type == "new-vendor" || decodedToken.type == "update-vendor") {
-                    const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
-                    const vendorResponse = await fetch(getVendorDetailsUrl);
-                    const vendorJson = await vendorResponse.json();
-                    const vendorDetails = vendorJson.data.vendor;
-                    const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
-                    const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
-                    const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
-                    const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
-                    if (isVerified)
-                        setReviewDone(true)
-                    else {
-                        setTitle("Verify Vendor Details")
-                        setCompanyName(companyName);
-                        setProductCategory(productCategory);
-                        setContactPersonName(contactPerson.name);
-                        setContactPersonEmail(contactPerson.email);
-                        setContactPersonPhone(contactPerson.phoneNumber);
-                        setGst(gst);
-                        setGstAttachment(gstAtt);
-                        setAddressLine1(address.addressLine1)
-                        if (address.addressLine2)
-                            setAddressLine2(address.addressLine2)
-                        setCountry(address.country)
-                        setState(address.state)
-                        setCity(address.city)
-                        setPostalCode(address.postalCode)
-                        setBeneficiary(vendorBank.beneficiaryName)
-                        setBankName(vendorBank.bankName)
-                        setAccountNumber(vendorBank.accountNumber)
-                        setBranch(vendorBank.branch)
-                        setIfsc(vendorBank.ifsc)
-                        setBankAttachment(proofAtt)
-                        setAgreementAttachment(agreementAtt)
-                        if (msme)
-                            setMsme(msme)
-                        let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
-                        setMsmeAttachment(msmeAtt)
-                        if (coi)
-                            setCoi(coi)
-                        let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
-                        setCoiAttachment(coiAtt)
-                        if (tradeMark)
-                            setTradeMark(tradeMark)
-                        let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
-                        setTradeAttachment(tradeMarkAtt)
-                        if (otherFields && otherFields.length > 0) {
-                            let dynamicFieldsAttachs = []
-                            for (let i = 0; i < otherFields.length; i++) {
-                                const otherField = otherFields[i];
-                                let otherAttach = await getFile('vendorOtherId', otherField.id)
-                                dynamicFieldsAttachs.push(otherAttach)
-                            }
-                            setDynamicFieldsAttachments(dynamicFieldsAttachs)
-                            setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
+                vendorCode = decodedToken.vendorCode
+            }
+
+            if (vendorCode) {
+                const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`
+                const vendorResponse = await fetch(getVendorDetailsUrl);
+                const vendorJson = await vendorResponse.json();
+                const vendorDetails = vendorJson.data.vendor;
+                const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
+                const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
+                const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
+                const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
+                if (isVerified)
+                    setReviewDone(true)
+                else {
+                    setTitle("Verify Vendor Details")
+                    setCompanyName(companyName);
+                    setProductCategory(productCategory);
+                    setContactPersonName(contactPerson.name);
+                    setContactPersonEmail(contactPerson.email);
+                    setContactPersonPhone(contactPerson.phoneNumber);
+                    setGst(gst);
+                    setGstAttachment(gstAtt);
+                    setAddressLine1(address.addressLine1)
+                    if (address.addressLine2)
+                        setAddressLine2(address.addressLine2)
+                    setCountry(address.country)
+                    setState(address.state)
+                    setCity(address.city)
+                    setPostalCode(address.postalCode)
+                    setBeneficiary(vendorBank.beneficiaryName)
+                    setBankName(vendorBank.bankName)
+                    setAccountNumber(vendorBank.accountNumber)
+                    setBranch(vendorBank.branch)
+                    setIfsc(vendorBank.ifsc)
+                    setBankAttachment(proofAtt)
+                    setAgreementAttachment(agreementAtt)
+                    if (msme)
+                        setMsme(msme)
+                    let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
+                    setMsmeAttachment(msmeAtt)
+                    if (coi)
+                        setCoi(coi)
+                    let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
+                    setCoiAttachment(coiAtt)
+                    if (tradeMark)
+                        setTradeMark(tradeMark)
+                    let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
+                    setTradeAttachment(tradeMarkAtt)
+                    if (otherFields && otherFields.length > 0) {
+                        let dynamicFieldsAttachs = []
+                        for (let i = 0; i < otherFields.length; i++) {
+                            const otherField = otherFields[i];
+                            let otherAttach = await getFile('vendorOtherId', otherField.id)
+                            dynamicFieldsAttachs.push(otherAttach)
                         }
+                        setDynamicFieldsAttachments(dynamicFieldsAttachs)
+                        setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
                     }
                 }
-                setVendorCode(decodedToken.vendorCode)
+                setVendorCode(vendorCode)
             }
             setLoading(false)
         }
@@ -289,6 +292,16 @@ export default function VendorDetails() {
     else
         return (
             <div className="vendor-main-container">
+                {params.vendorCode && <Link to="/admin">
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        aria-label="back"
+                    // onClick={() => handleBack()}
+                    >
+                        <ArrowBack />Back
+                    </IconButton>
+                </Link>}
                 <h1>{title}</h1>
                 <Stack component="form" onSubmit={handleSubmit}>
                     <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
@@ -734,74 +747,78 @@ export default function VendorDetails() {
                     </Grid>
                     <br />
                     <Divider />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                color="primary"
-                                onChange={(e) => setCheckboxChecked(e.target.checked)}
+                    {params.validateToken &&
+                        <>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        color="primary"
+                                        onChange={(e) => setCheckboxChecked(e.target.checked)}
+                                    />
+                                }
+                                label="I confirm that I have reviewed and verified all the details and documents in this form"
                             />
-                        }
-                        label="I confirm that I have reviewed and verified all the details and documents in this form"
-                    />
-                    {checkboxChecked && (
-                        <Box mt={5} display="flex" justifyContent="center">
-                            <Box mx={2}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    fullWidth
-                                    size="small"
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
-                                    onClick={(e) => validateNewVendor(e, true)}
-                                >
-                                    Approve
-                                </Button>
-                            </Box>
-                            <Box mx={2}>
-                                <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    fullWidth
-                                    size="small"
-                                    onClick={() => setDenyOpen(true)}
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
-                                >
-                                    Reject
-                                </Button>
-                            </Box>
-                        </Box>
-                    )}
-                    {denyOpen && checkboxChecked && (
-                        <Box mt={5} display="flex" justifyContent="center">
-                            <Box mx={2} width="75%">
-                                <TextField
-                                    autoFocus
-                                    margin="dense"
-                                    id="deny-reason"
-                                    label="Denial Reason"
-                                    type="text"
-                                    fullWidth
-                                    size="small"
-                                    multiline // Added multiline property
-                                    rows={4} // Added rows property
-                                    value={denyReason}
-                                    onChange={(e) => setDenyReason(e.target.value)}
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
-                                />
-                            </Box>
-                            <Box mx={2} display="flex" justifyContent="center" alignItems="center">
-                                <Button
-                                    onClick={(e) => validateNewVendor(e, false)}
-                                    color="primary"
-                                    fullWidth
-                                    size="small"
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
-                                >
-                                    Submit
-                                </Button>
-                            </Box>
-                        </Box>
-                    )}
+                            {checkboxChecked && (
+                                <Box mt={5} display="flex" justifyContent="center">
+                                    <Box mx={2}>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            fullWidth
+                                            size="small"
+                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                            onClick={(e) => validateNewVendor(e, true)}
+                                        >
+                                            Approve
+                                        </Button>
+                                    </Box>
+                                    <Box mx={2}>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            fullWidth
+                                            size="small"
+                                            onClick={() => setDenyOpen(true)}
+                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                        >
+                                            Reject
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
+                            {denyOpen && checkboxChecked && (
+                                <Box mt={5} display="flex" justifyContent="center">
+                                    <Box mx={2} width="75%">
+                                        <TextField
+                                            autoFocus
+                                            margin="dense"
+                                            id="deny-reason"
+                                            label="Denial Reason"
+                                            type="text"
+                                            fullWidth
+                                            size="small"
+                                            multiline // Added multiline property
+                                            rows={4} // Added rows property
+                                            value={denyReason}
+                                            onChange={(e) => setDenyReason(e.target.value)}
+                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
+                                        />
+                                    </Box>
+                                    <Box mx={2} display="flex" justifyContent="center" alignItems="center">
+                                        <Button
+                                            onClick={(e) => validateNewVendor(e, false)}
+                                            color="primary"
+                                            fullWidth
+                                            size="small"
+                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
+                                        >
+                                            Submit
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
+                        </>
+                    }
                 </Stack>
             </div>
         );

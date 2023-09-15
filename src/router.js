@@ -32,6 +32,7 @@ export const router = createBrowserRouter(
           <Route element={<AuthLayout />}>
             <Route path="login" element={<Login />} />
             <Route path="" element={<Main />} />
+            <Route path="vendor-registration" element={<VendorRegistration />} />
             <Route path="new-skus/:vendorCode" element={<AddSKUs />} />
             <Route path="new-buying-order/:vendorCode" element={<AddBuyingOrder />} />
             <Route path="vendor/:vendorCode" element={<VendorDetails />} />
