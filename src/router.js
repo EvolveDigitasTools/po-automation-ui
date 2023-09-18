@@ -9,6 +9,7 @@ import { AuthLayer } from "./components/auth/AuthLayer";
 import AuthLayout from "./components/auth/AuthLayout";
 import Login from "./components/Login/Login";
 import VerifySKUs from "./components/main/verifySKUs/verifySKUs";
+import ReviewPO from "./components/main/reviewPO/ReviewPO";
 
 const getUserData = () =>
   new Promise((resolve) =>
@@ -26,6 +27,7 @@ export const router = createBrowserRouter(
         <Route path="/review-vendor/:validateToken" element={<VendorDetails />} />
         <Route path="/update-vendor/:validateToken" element={<VendorRegistration />} />
         <Route path="/review-skus/:validateToken" element={<VerifySKUs />} />
+        <Route path="/review-po/:validateToken" element={<ReviewPO />} />
         <Route
           path="/admin"
           element={<AuthLayer />}

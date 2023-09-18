@@ -1,13 +1,13 @@
-.new-skus{
+.new-pos{
     padding: 40px;
 }
-.new-skus .row .col{
+.new-pos .row .col{
     max-width: 50%;
     width: 50%;
     padding-top: 10px;
     display: block;
 }
-.new-skus .row .col:nth-child(2){
+.new-pos .row .col:nth-child(2){
    margin-left: 10px;
 }
 .back-button{
@@ -15,7 +15,7 @@
   
     padding: 10px;
 }
-.new-skus .row{
+.new-pos .row{
     display: flex;
 }
 

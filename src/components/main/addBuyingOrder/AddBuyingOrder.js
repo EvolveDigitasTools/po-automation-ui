@@ -1,14 +1,25 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
 import {
     Autocomplete,
     Button,
+    Grid,
+    IconButton,
+    Paper,
     Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     TextField,
     Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./ADDBuying.css";
+import { ArrowBack } from "@mui/icons-material";
+import Attachment from "../../attachment/Attachment";
 
 function convertToIndianNumber(num) {
     // Arrays for Indian numbering system
@@ -124,7 +135,12 @@ export default function AddBuyingOrder() {
     const [currency, setCurrency] = useState("INR");
     const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
     const [paymentTerms, setPaymentTerms] = useState("");
-    const [buyingSheet, setBuyingSheet] = useState(null);
+    const [buyingAtt, setBuyingAtt] = useState(null);
+    const [submit, setSubmit] = useState(false);
+    const [poAtt, setPOAtt] = useState(null);
+    const [poCode, setPOCode] = useState("");
+
+    const [createdBy, setCreatedBy] = useState(null)
     const currencyList = ["INR", "USD", "AED", "SAR", "TAKA"];
 
     //ComponentDidMount
@@ -148,6 +164,13 @@ export default function AddBuyingOrder() {
                     console.error("API error:", error);
                     // Handle the error
                 });
+
+        const poCodeUrl = `${process.env.REACT_APP_SERVER_URL}buying-order/`
+        fetch(poCodeUrl)
+            .then((response) => response.json())
+            .then((res) => {
+                setPOCode(res.data.poCode)
+            })
         return () => {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
@@ -171,54 +194,25 @@ export default function AddBuyingOrder() {
         else setVendor(null);
     };
 
-    const handleDownload = async () => {
-        // Sample data for the Excel file
-        const data = [
-            ["SKU*", "expected_qty*", "unit_cost*", "GST_%*"],
-            // Add more data here
-        ];
-
-        // Create a new workbook
+    const updateFile = async (file) => {
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Buying Sheet");
+        await workbook.xlsx.load(file);
 
-        // Populate the worksheet with data
-        data.forEach((row) => {
-            worksheet.addRow(row);
+        const worksheet = workbook.getWorksheet(1);
+        const parsedData = [];
+
+        worksheet.eachRow((row) => {
+            parsedData.push(row.values);
         });
 
-        data[0].forEach((title, columnIndex) => {
-            const column = worksheet.getColumn(columnIndex + 1);
-            let maxTitleLength = title.length;
+        setExcelData(parsedData)
+        setBuyingAtt(file)
+    }
 
-            // Iterate through data rows to find the maximum title length in the column
-            // data.slice(1).forEach((row) => {
-            //   const cellValue = row[columnIndex];
-            //   if (cellValue && cellValue.length > maxTitleLength) {
-            //     maxTitleLength = cellValue.length;
-            //   }
-            // });
+    const getPOAtt = async () => {
+        if (poAtt)
+            return poAtt
 
-            // Set the column width based on the maximum title length
-            column.width = maxTitleLength + 2; // You can adjust the additional width as needed
-        });
-
-        // Generate a Blob from the workbook
-        const blob = await workbook.xlsx.writeBuffer();
-
-        // Create a URL for the Blob and create a temporary anchor element to trigger download
-        const url = URL.createObjectURL(new Blob([blob]));
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "newBuyingSheet.xlsx";
-        a.click();
-
-        // Clean up by revoking the Blob URL
-        URL.revokeObjectURL(url);
-    };
-
-    const downloadPO = async (e) => {
-        e.preventDefault();
         const buyingExcel = new ExcelJS.Workbook();
         const currentDate = new Date();
         const year = currentDate.getFullYear();
@@ -226,23 +220,14 @@ export default function AddBuyingOrder() {
         const day = String(currentDate.getDate()).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
 
-        await buyingExcel.xlsx.load(buyingSheet);
+        await buyingExcel.xlsx.load(buyingAtt);
 
-        const buyingOrderSheet = buyingExcel.getWorksheet(1);
-        const parsedData = [];
-
-        buyingOrderSheet.eachRow((row) => {
-            parsedData.push(row.values);
-        });
-
-        console.log(parsedData);
+        const parsedData = excelData
 
         const records = [];
         const buyingRecordsKey = ["skuCode", "expectedQty", "unitCost", "gst"];
-        const formData = new FormData();
         for (let i = 1; i < parsedData.length; i++) {
             const row = parsedData[i].slice(1);
-            console.log("row", i, row);
             // Do something with the form data, like sending it to a server
             const record = {};
 
@@ -252,28 +237,10 @@ export default function AddBuyingOrder() {
             }
             records.push(record);
         }
-        formData.append("currency", currency);
-        if (paymentTerms) formData.append("paymentTerms", paymentTerms);
-        if (estimatedDeliveryDate)
-            formData.append("estimatedDeliveryDate", estimatedDeliveryDate);
-        formData.append("records", JSON.stringify(records));
-        formData.append("vendorCode", vendorCode);
-
-        // Data is valid, make an API request to send the data
-        // Example using fetch API
-        for (var key of formData.entries()) {
-            console.log(key[0] + ", " + key[1]);
-        }
-        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}buying-order/new`, {
-            method: "POST",
-            body: formData,
-        })
-        const newBO = await response.json();
-        setExcelData(parsedData);
         // Create a new workbook
         const poWorkbook = new ExcelJS.Workbook();
         const poSheet = poWorkbook.addWorksheet("Order Details");
-        
+
         // Define the data
         const data = [
             [],
@@ -298,18 +265,16 @@ export default function AddBuyingOrder() {
                 "",
                 "",
                 "P.O No :",
-                newBO?.data?.buyingOrder?.poCode,
+                poCode,
             ],
             [
                 "",
                 "Partner Address :",
                 "",
-                `${vendor.address.addressLine1}, ${
-                    vendor.address.addressLine2
-                        ? vendor.address.addressLine2 + ", "
-                        : ""
-                }${vendor.address.city}, ${vendor.address.state}-${
-                    vendor.address.postalCode
+                `${vendor.address.addressLine1}, ${vendor.address?.addressLine2
+                    ? vendor.address.addressLine2 + ", "
+                    : ""
+                }${vendor.address.city}, ${vendor.address.state}-${vendor.address.postalCode
                 }`,
                 "",
                 "",
@@ -1096,10 +1061,100 @@ export default function AddBuyingOrder() {
             `S${21 + records.length}`
         );
 
-        const blob = await poWorkbook.xlsx.writeBuffer();
+        const poBuffer = await poWorkbook.xlsx.writeBuffer();
+        setPOAtt(poBuffer)
+        return poBuffer;
+    };
+
+    const handleDownload = async () => {
+        // Sample data for the Excel file
+        const data = [
+            ["SKU*", "expected_qty*", "unit_cost*", "GST_%*"],
+            // Add more data here
+        ];
+
+        // Create a new workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Buying Sheet");
+
+        // Populate the worksheet with data
+        data.forEach((row) => {
+            worksheet.addRow(row);
+        });
+
+        data[0].forEach((title, columnIndex) => {
+            const column = worksheet.getColumn(columnIndex + 1);
+            let maxTitleLength = title.length;
+            column.width = maxTitleLength + 2; // You can adjust the additional width as needed
+        });
+
+        // Generate a Blob from the workbook
+        const blob = await workbook.xlsx.writeBuffer();
 
         // Create a URL for the Blob and create a temporary anchor element to trigger download
         const url = URL.createObjectURL(new Blob([blob]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "newBuyingSheet.xlsx";
+        a.click();
+
+        // Clean up by revoking the Blob URL
+        URL.revokeObjectURL(url);
+    };
+
+    const submitPOForVerification = async (e) => {
+        e.preventDefault();
+        setSubmit(true)
+        if (!buyingAtt)
+            return
+
+        const parsedData = excelData
+        const records = [];
+        const buyingRecordsKey = ["skuCode", "expectedQty", "unitCost", "gst"];
+        const formData = new FormData();
+        for (let i = 1; i < parsedData.length; i++) {
+            const row = parsedData[i].slice(1);
+            // Do something with the form data, like sending it to a server
+            const record = {};
+
+            for (let i = 0; i < row.length; i++) {
+                const value = row[i];
+                if (value) record[buyingRecordsKey[i]] = value;
+            }
+            records.push(record);
+        }
+        formData.append("currency", currency);
+        if (paymentTerms) formData.append("paymentTerms", paymentTerms);
+        if (estimatedDeliveryDate)
+            formData.append("estimatedDeliveryDate", estimatedDeliveryDate);
+        formData.append("records", JSON.stringify(records));
+        formData.append("vendorCode", vendorCode);
+        formData.append("createdBy", createdBy)
+        const poBuffer = await getPOAtt();
+        formData.append("poCode", poCode)
+        const blob = new Blob([poBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
+
+        // Convert the Blob to a File
+        const excelFile = new File([blob], 'po.xlsx', { type: blob.type });
+        formData.append("poAttachment", excelFile)
+
+        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}buying-order/new`, {
+            method: "POST",
+            body: formData,
+        })
+        const newBO = await response.json();
+    };
+
+    const previewPO = async (e) => {
+        e.preventDefault();
+        setSubmit(true)
+        if (!buyingAtt)
+            return
+        const poAtt = await getPOAtt()
+        // Create a URL for the Blob and create a temporary anchor element to trigger download
+        const url = URL.createObjectURL(new Blob([poAtt]));
         const a = document.createElement("a");
         a.href = url;
         a.download = "po.xlsx";
@@ -1107,16 +1162,35 @@ export default function AddBuyingOrder() {
 
         // Clean up by revoking the Blob URL
         URL.revokeObjectURL(url);
-    };
+    }
 
     return (
-        <div className="new-skus">
-            <h1>PO Creation</h1>
-            <button className="back-button">Back</button>
-            <div className="vendor-info">
-                <h2>Vendor Details</h2>
-                <div className="row">
-                    <div className="col">
+        <div className="new-pos">
+            <Link to="/admin">
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    aria-label="back"
+                // onClick={() => handleBack()}
+                >
+                    <ArrowBack />Back
+                </IconButton>
+            </Link>
+            <form onSubmit={submitPOForVerification}>
+                <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                    <Grid item xs={6}>
+                        <h1>PO Creation</h1>
+                    </Grid>
+                    <Grid item xs={6} style={{ margin: "auto" }}>
+                        <Attachment
+                            label="Download Sample Buying Sheet Excel"
+                            downloadFile={handleDownload}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <h2>Vendor Details</h2>
+                    </Grid>
+                    <Grid item xs={6}>
                         <Autocomplete
                             required
                             disablePortal
@@ -1135,9 +1209,12 @@ export default function AddBuyingOrder() {
                                     label="Vendor Code"
                                 />
                             )}
+                            size="small"
                             value={vendor}
                             onChange={(e, newValue) => updateVendor(newValue)}
                         />
+                    </Grid>
+                    <Grid item xs={6}>
                         <Autocomplete
                             required
                             disablePortal
@@ -1156,29 +1233,12 @@ export default function AddBuyingOrder() {
                                     label="Company Name"
                                 />
                             )}
+                            size="small"
                             value={vendor}
                             onChange={(e, newValue) => updateVendor(newValue)}
                         />
-                        <TextField
-                            id="state"
-                            label="State"
-                            value={vendor ? vendor.address?.state : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                        />
-                    </div>
-                    <div className="col">
-                        <TextField
-                            id="country"
-                            label="Country"
-                            value={vendor ? vendor.address?.country : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                        />
+                    </Grid>
+                    <Grid item xs={6}>
                         <TextField
                             id="product-category"
                             label="Product Category"
@@ -1187,89 +1247,151 @@ export default function AddBuyingOrder() {
                                 readOnly: true,
                             }}
                             fullWidth
+                            size="small"
                         />
-                        <button
-                            className="download-button"
-                            onClick={handleDownload}
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="country"
+                            label="Country"
+                            value={vendor ? vendor.address.country : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            fullWidth
+                            size="small"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="state"
+                            label="State"
+                            value={vendor ? vendor.address.state : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            fullWidth
+                            size="small"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Autocomplete
+                            required
+                            disablePortal
+                            id="currency"
+                            options={currencyList}
+                            renderInput={(params) => (
+                                <TextField
+                                    required
+                                    {...params}
+                                    inputProps={{
+                                        ...params.inputProps,
+                                        autoComplete: "new-password",
+                                        style: { width: "auto" },
+                                    }}
+                                    label="Currency"
+                                />
+                            )}
+                            value={currency}
+                            size="small"
+                            onChange={(e, newValue) =>
+                                setCurrency(newValue)
+                            }
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="estimated-delivery-dates"
+                            label="Estimated Delivery Dates"
+                            value={estimatedDeliveryDate}
+                            fullWidth
+                            size="small"
+                            onChange={(e) =>
+                                setEstimatedDeliveryDate(e.target.value)
+                            }
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="payment-terms"
+                            label="Payment Terms"
+                            value={paymentTerms}
+                            fullWidth
+                            size="small"
+                            onChange={(e) =>
+                                setPaymentTerms(e.target.value)
+                            }
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            required
+                            id="created-by"
+                            label="Your Email"
+                            value={createdBy}
+                            fullWidth
+                            size="small"
+                            onChange={(e) =>
+                                setCreatedBy(e.target.value)
+                            }
+                            type="email"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Attachment
+                            label="Upload SKU Sheet"
+                            file={buyingAtt}
+                            updateFile={(file) => updateFile(file)}
+                            required={true}
+                            submit={submit}
+                            fileType=".xlsx"
+                        />
+                    </Grid>
+                    {excelData.length > 0 && <Grid item xs={12}>
+                        <TableContainer component={Paper}>
+                            <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        {excelData[0].slice(1).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {excelData.slice(1).map((row, i) => (
+                                        <TableRow
+                                            key={i}
+                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        >
+                                            {row.map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Grid>}
+                    <Grid item xs={6}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            fullWidth
+                            onClick={previewPO}
                         >
-                            Download Buying Sheet Format
-                        </button>
-                    </div>
-                </div>
-                <div className="excel-section">
-                    <h2>Upload Buying Sheet Details</h2>
-
-                    <Stack component="form" onSubmit={downloadPO}>
-                        <div className="row">
-                            <div className="col">
-                                <Autocomplete
-                                    required
-                                    disablePortal
-                                    id="currency"
-                                    options={currencyList}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            required
-                                            {...params}
-                                            inputProps={{
-                                                ...params.inputProps,
-                                                autoComplete: "new-password",
-                                                style: { width: "auto" },
-                                            }}
-                                            label="Currency"
-                                        />
-                                    )}
-                                    value={currency}
-                                    onChange={(e, newValue) =>
-                                        setCurrency(newValue)
-                                    }
-                                />
-                                <TextField
-                                    id="payment-terms"
-                                    label="Payment Terms"
-                                    value={paymentTerms}
-                                    fullWidth
-                                    onChange={(e) =>
-                                        setPaymentTerms(e.target.value)
-                                    }
-                                />
-                            </div>
-                            <div className="col">
-                                <TextField
-                                    id="estimated-delivery-dates"
-                                    label="Estimated Delivery Dates"
-                                    value={estimatedDeliveryDate}
-                                    fullWidth
-                                    onChange={(e) =>
-                                        setEstimatedDeliveryDate(e.target.value)
-                                    }
-                                />
-                                <TextField
-                                    required
-                                    id="buying-sheet"
-                                    type="file"
-                                    label="Buying Sheet"
-                                    className="file-first file-input"
-                                    fullWidth
-                                    onChange={(e) =>
-                                        setBuyingSheet(e.target.files[0])
-                                    }
-                                />
-                            </div>
-                        </div>
+                            Preview PO
+                        </Button>
+                    </Grid>
+                    <Grid item xs={6}>
                         <Button
                             variant="contained"
                             color="primary"
                             type="submit"
+                            size="small"
+                            fullWidth
                         >
-                            Download Purchase Order Excel
+                            Send PO For Verification
                         </Button>
-                    </Stack>
-                </div>
-            </div>
-
-            <Typography variant="h6">Excel Data:</Typography>
-            <pre>{JSON.stringify(excelData, null, 2)}</pre>
+                    </Grid>
+                </Grid>
+            </form>
         </div>
     );
 }
