@@ -2,10 +2,12 @@ import React from 'react';
 import { TextField, IconButton, InputAdornment, FormControl, InputLabel, OutlinedInput } from '@mui/material';
 import { FileDownload, FileUpload } from '@mui/icons-material';
 
-export default function Attachment({ label, file, updateFile, required, submit }) {
+export default function Attachment({ label, file, updateFile, downloadFile, required, submit, fileType }) {
     const uploadFile = () => {
         const input = document.createElement('input');
         input.type = 'file';
+        if(fileType)
+        input.accept = fileType;
 
         input.onchange = (e) => {
             const selectedFile = e.target.files[0];
@@ -39,9 +41,9 @@ export default function Attachment({ label, file, updateFile, required, submit }
                         >
                             <FileUpload />
                         </IconButton>}
-                        {file && <IconButton
+                        {(file || downloadFile) && <IconButton
                             aria-label="Open File"
-                            onClick={viewFile}
+                            onClick={downloadFile ? downloadFile : viewFile}
                         >
                             <FileDownload />
                         </IconButton>}

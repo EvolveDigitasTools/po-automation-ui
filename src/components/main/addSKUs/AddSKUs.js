@@ -1,15 +1,21 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
-import { Autocomplete, TextField, Typography } from "@mui/material";
+import { Autocomplete, Button, Container, Grid, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./AddSku.css";
+import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
+import Attachment from "../../attachment/Attachment";
 
 export default function AddSKUs() {
     const params = useParams();
     const vendorCode = params.vendorCode;
     const [excelData, setExcelData] = useState([]);
+    const [skuAtt, setSKUAtt] = useState(null);
+    const [submit, setSubmit] = useState(false)
     const [vendors, setVendors] = useState([]);
     const [vendor, setVendor] = useState(null);
+    const [success, setSuccess] = useState(false);
+    const [createdBy, setCreatedBy] = useState("");
 
     //ComponentDidMount
     useEffect(() => {
@@ -17,8 +23,8 @@ export default function AddSKUs() {
             .then((response) => response.json())
             .then((res) => {
                 let vendor = res.data.vendors.find(vendor => vendor.vendorCode == vendorCode)
-                if(vendor)
-                setVendor(vendor)
+                if (vendor)
+                    setVendor(vendor)
                 setVendors(res.data.vendors);
             })
             .catch((error) => {
@@ -31,11 +37,6 @@ export default function AddSKUs() {
             console.log("Component unmounted");
         };
     }, []);
-
-    const updateVendor = async (field, fieldValue) => {
-        console.log(field, fieldValue)
-        setVendor(fieldValue)
-    }
 
     const handleDownload = async () => {
         // Sample data for the Excel file
@@ -103,10 +104,7 @@ export default function AddSKUs() {
         URL.revokeObjectURL(url);
     };
 
-    const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
+    const updateFile = async (file) => {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(file);
 
@@ -116,6 +114,17 @@ export default function AddSKUs() {
         worksheet.eachRow((row) => {
             parsedData.push(row.values);
         });
+
+        setExcelData(parsedData)
+        setSKUAtt(file)
+    }
+
+    const handleFileChange = async (e) => {
+        e.preventDefault();
+        setSubmit(true)
+        if (!skuAtt)
+            return
+        const parsedData = excelData
 
         const keys = [
             "skuCode",
@@ -139,6 +148,7 @@ export default function AddSKUs() {
             "MRP",
             "vendorCode",
         ];
+        let successRows = 0
         for (let i = 1; i < parsedData.length; i++) {
             const row = parsedData[i].slice(1);
             console.log("row", i, row);
@@ -150,37 +160,90 @@ export default function AddSKUs() {
                 if (value) formData.append(keys[i], value);
             }
             formData.append("vendorCode", vendor.vendorCode);
+            formData.append("createdBy", createdBy);
 
             // Data is valid, make an API request to send the data
             // Example using fetch API
             for (var key of formData.entries()) {
                 console.log(key[0] + ", " + key[1]);
             }
-            fetch(`${process.env.REACT_APP_SERVER_URL}sku/new`, {
+            const skuUrl = `${process.env.REACT_APP_SERVER_URL}sku/new`
+            const skuResp = await fetch(skuUrl, {
                 method: "POST",
                 body: formData,
             })
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log("API response:", data);
-                    // Handle the response as needed
-                })
-                .catch((error) => {
-                    console.error("API error:", error);
-                    // Handle the error
-                });
+            const skuData = await skuResp.json()
+            if(skuData.success)
+            successRows++;
         }
-        setExcelData(parsedData);
+        if(successRows == (parsedData.length-1)){
+            const mailFormData = new FormData();
+            mailFormData.append("vendorCode", vendor.vendorCode)
+            const sendMailSkuURL = `${process.env.REACT_APP_SERVER_URL}sku/send-verify-mail`
+            const mailSKUResp = await fetch(sendMailSkuURL, {
+                method: "POST",
+                body: mailFormData,
+            })
+            const mailData = await mailSKUResp.json()
+            if(mailData.success)
+            setSuccess(true)
+        }
     };
+    if (success)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
+                    <CheckCircleOutline
+                        sx={{ fontSize: 100, color: "green" }}
+                    />
+                    <Typography variant="h4" gutterBottom>
+                        Submission Successful
+                    </Typography>
+                    <Typography variant="body1">
+                        Four SKUs have been submitted for review. It will be added once verified.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        style={{ marginTop: "1rem" }}
+                        onClick={() => window.location.reload()}
+                    >
+                        Go Back
+                    </Button>
+                </Paper>
+            </Container>
+        );
 
     return (
         <div className="new-skus">
-            <h1>Add New SKUs</h1>
-            <button className="back-button">Back</button>
-            <div className="vendor-info">
-                <h2>Vendor Details</h2>
-                <div className="row">
-                    <div className="col">
+            <Link to="/admin">
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    aria-label="back"
+                // onClick={() => handleBack()}
+                >
+                    <ArrowBack />Back
+                </IconButton>
+            </Link>
+            <form onSubmit={handleFileChange}>
+                <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                    <Grid item xs={6}>
+                        <h1>Add New SKUs</h1>
+                    </Grid>
+                    <Grid item xs={6} style={{ margin: "auto" }}>
+                        <Attachment
+                            label="Download Sample SKU Excel"
+                            downloadFile={handleDownload}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <h2>Vendor Details</h2>
+                    </Grid>
+                    <Grid item xs={6}>
                         <Autocomplete
                             required
                             disablePortal
@@ -199,9 +262,12 @@ export default function AddSKUs() {
                                     label="Vendor Code"
                                 />
                             )}
+                            size="small"
                             value={vendor}
                             onChange={(e, newValue) => setVendor(newValue)}
                         />
+                    </Grid>
+                    <Grid item xs={6}>
                         <Autocomplete
                             required
                             disablePortal
@@ -220,29 +286,12 @@ export default function AddSKUs() {
                                     label="Company Name"
                                 />
                             )}
+                            size="small"
                             value={vendor}
                             onChange={(e, newValue) => setVendor(newValue)}
                         />
-                        <TextField
-                            id="state"
-                            label="State"
-                            value={vendor ? vendor.state : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                        />
-                    </div>
-                    <div className="col">
-                        <TextField
-                            id="country"
-                            label="Country"
-                            value={vendor ? vendor.country : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                        />
+                    </Grid>
+                    <Grid item xs={6}>
                         <TextField
                             id="product-category"
                             label="Product Category"
@@ -251,31 +300,83 @@ export default function AddSKUs() {
                                 readOnly: true,
                             }}
                             fullWidth
+                            size="small"
                         />
-                        <button
-                            className="download-button"
-                            onClick={handleDownload}
-                        >
-                            Download Sample Buying Sheet Excel
-                        </button>
-                    </div>
-                </div>
-                <div className="excel-section">
-                    <h2>Upload SKU Details</h2>
-                </div>
-
-                <TextField
-                    type="file"
-                    id="file-input"
-                    className="file-input"
-                    accept=".xlsx"
-                    onChange={handleFileChange}
-                />
-            </div>
-
-            <Typography variant="h6">Excel Data:</Typography>
-            <pre>{JSON.stringify(excelData, null, 2)}</pre>
-            <button onClick={handleDownload}>Download Sample SKU Excel</button>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="country"
+                            label="Country"
+                            value={vendor ? vendor.country : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            fullWidth
+                            size="small"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="state"
+                            label="State"
+                            value={vendor ? vendor.state : ""}
+                            InputProps={{
+                                readOnly: true,
+                            }}
+                            fullWidth
+                            size="small"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Attachment
+                            label="Upload SKU Sheet"
+                            file={skuAtt}
+                            updateFile={(file) => updateFile(file)}
+                            required={true}
+                            submit={submit}
+                            fileType=".xlsx"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            id="created-by"
+                            label="Created By"
+                            value={createdBy}
+                            onChange={(e) => setCreatedBy(e.target.value)}
+                            required
+                            type="email"
+                            fullWidth
+                            size="small"
+                        />
+                    </Grid>
+                    {excelData.length > 0 && <Grid item xs={12}>
+                        <TableContainer component={Paper}>
+                            <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        {excelData[0].slice(1).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {excelData.slice(1).map((row, i) => (
+                                        <TableRow
+                                            key={i}
+                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        >
+                                            {row.map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Grid>}
+                    <Grid item xs={12}>
+                        <Button variant="contained" color="primary" type="submit" fullWidth size="small">
+                            Submit
+                        </Button>
+                    </Grid>
+                </Grid>
+            </form>
         </div>
     );
 }

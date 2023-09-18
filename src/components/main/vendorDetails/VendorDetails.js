@@ -118,7 +118,7 @@ export default function VendorDetails() {
                 const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
                 const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
                 const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
-                if (isVerified)
+                if (isVerified && params.validateToken)
                     setReviewDone(true)
                 else {
                     setTitle("Verify Vendor Details")

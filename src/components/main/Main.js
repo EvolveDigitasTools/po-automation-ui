@@ -70,7 +70,7 @@ export default function Main() {
     }
 
     function addSKUs() {
-        if (selectedRow) navigate(`/new-skus/${selectedRow}`);
+        if (selectedRow) navigate(`/admin/new-skus/${selectedRow}`);
         else navigate(`/admin/new-skus/new`);
     }
 
