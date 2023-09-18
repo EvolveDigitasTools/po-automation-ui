@@ -30,7 +30,7 @@ export default function ReviewPO() {
         if (!isRecordValid)
             formData.append("reason", denyReason);
 
-        const validateSKUUrl = `${process.env.REACT_APP_SERVER_URL}sku/review`
+        const validateSKUUrl = `${process.env.REACT_APP_SERVER_URL}buying-order/review`
         const validationResponse = await fetch(validateSKUUrl, {
             method: "POST",
             body: formData
