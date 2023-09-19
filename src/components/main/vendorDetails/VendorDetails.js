@@ -22,7 +22,7 @@ import "./VendorDetails.css";
 import { Link, useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
 import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
-import { getMimeTypeFromFileName } from "../../../util";
+import { binaryStringToBlob, getMimeTypeFromFileName } from "../../../util";
 import Attachment from "../../attachment/Attachment";
 
 export default function VendorDetails() {
@@ -72,21 +72,6 @@ export default function VendorDetails() {
 
     //ComponentDidMount
     useEffect(() => {
-        function binaryStringToBlob(binaryString, mimeType) {
-            // Step 1: Convert the binary string to an array of integers.
-            const byteCharacters = atob(binaryString);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-
-            // Step 2: Create a Uint8Array from the array of integers.
-            const byteArray = new Uint8Array(byteNumbers);
-
-            // Step 3: Create a Blob from the Uint8Array.
-            return new Blob([byteArray], { type: mimeType });
-        }
-
         const getFile = async (idType, id) => {
             try {
                 const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`

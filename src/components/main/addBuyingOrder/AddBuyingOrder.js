@@ -1134,7 +1134,7 @@ export default function AddBuyingOrder() {
         if (estimatedDeliveryDate)
             formData.append("estimatedDeliveryDate", estimatedDeliveryDate);
         formData.append("records", JSON.stringify(records));
-        formData.append("vendorCode", vendorCode);
+        formData.append("vendorCode", vendor.vendorCode);
         formData.append("createdBy", createdBy)
         const poBuffer = await getPOAtt();
         formData.append("poCode", poCode)
@@ -1151,7 +1151,7 @@ export default function AddBuyingOrder() {
             body: formData,
         })
         const newBO = await response.json();
-        if(newBO.data.success){
+        if(newBO.success){
             setLoading(false);
             setPOSubmitted(true);
         }
@@ -1199,7 +1199,7 @@ export default function AddBuyingOrder() {
                         Submission Successful
                     </Typography>
                     <Typography variant="body1">
-                        Your skus has been verified. You can start adding Po with the skus.
+                        Your PO has been submitted for verification.
                     </Typography>
                     <Button
                         variant="contained"

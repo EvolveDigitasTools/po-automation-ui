@@ -18,3 +18,18 @@ export function getMimeTypeFromFileName(filename) {
   
     return mimeType;
 }
+
+export function binaryStringToBlob(binaryString, mimeType) {
+  // Step 1: Convert the binary string to an array of integers.
+  const byteCharacters = atob(binaryString);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+
+  // Step 2: Create a Uint8Array from the array of integers.
+  const byteArray = new Uint8Array(byteNumbers);
+
+  // Step 3: Create a Blob from the Uint8Array.
+  return new Blob([byteArray], { type: mimeType });
+}
