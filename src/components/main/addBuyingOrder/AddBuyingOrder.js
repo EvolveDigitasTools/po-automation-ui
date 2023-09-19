@@ -3,6 +3,8 @@ import ExcelJS from "exceljs";
 import {
     Autocomplete,
     Button,
+    CircularProgress,
+    Container,
     Grid,
     IconButton,
     Paper,
@@ -18,7 +20,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./ADDBuying.css";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
 import Attachment from "../../attachment/Attachment";
 
 function convertToIndianNumber(num) {
@@ -139,6 +141,8 @@ export default function AddBuyingOrder() {
     const [submit, setSubmit] = useState(false);
     const [poAtt, setPOAtt] = useState(null);
     const [poCode, setPOCode] = useState("");
+    const [loading, setLoading] = useState(true)
+    const [isPOSubmitted, setPOSubmitted] = useState(false)
 
     const [createdBy, setCreatedBy] = useState(null)
     const currencyList = ["INR", "USD", "AED", "SAR", "TAKA"];
@@ -149,6 +153,7 @@ export default function AddBuyingOrder() {
             .then((response) => response.json())
             .then((res) => {
                 setVendors(res.data.vendors);
+                setLoading(false)
             })
             .catch((error) => {
                 console.error("API error:", error);
@@ -159,6 +164,7 @@ export default function AddBuyingOrder() {
                 .then((response) => response.json())
                 .then((res) => {
                     setVendor(res.data.vendor);
+                    setLoading(false)
                 })
                 .catch((error) => {
                     console.error("API error:", error);
@@ -1107,7 +1113,7 @@ export default function AddBuyingOrder() {
         setSubmit(true)
         if (!buyingAtt)
             return
-
+        setLoading(true)
         const parsedData = excelData
         const records = [];
         const buyingRecordsKey = ["skuCode", "expectedQty", "unitCost", "gst"];
@@ -1145,6 +1151,10 @@ export default function AddBuyingOrder() {
             body: formData,
         })
         const newBO = await response.json();
+        if(newBO.data.success){
+            setLoading(false);
+            setPOSubmitted(true);
+        }
     };
 
     const previewPO = async (e) => {
@@ -1163,6 +1173,45 @@ export default function AddBuyingOrder() {
         // Clean up by revoking the Blob URL
         URL.revokeObjectURL(url);
     }
+
+    if (loading)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                    <CircularProgress />
+                    <Typography variant="h4" gutterBottom>
+                        Loading...
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    else if (isPOSubmitted)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
+                    <CheckCircleOutline
+                        sx={{ fontSize: 100, color: "green" }}
+                    />
+                    <Typography variant="h4" gutterBottom>
+                        Submission Successful
+                    </Typography>
+                    <Typography variant="body1">
+                        Your skus has been verified. You can start adding Po with the skus.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        style={{ marginTop: "1rem" }}
+                        onClick={() => window.location.reload()}
+                    >
+                        Go Back
+                    </Button>
+                </Paper>
+            </Container>
+        );
 
     return (
         <div className="new-pos">
@@ -1339,7 +1388,7 @@ export default function AddBuyingOrder() {
                     </Grid>
                     <Grid item xs={6}>
                         <Attachment
-                            label="Upload SKU Sheet"
+                            label="Upload Buying Order Sheet"
                             file={buyingAtt}
                             updateFile={(file) => updateFile(file)}
                             required={true}

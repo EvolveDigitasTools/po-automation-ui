@@ -203,7 +203,7 @@ export default function AddSKUs() {
                         Submission Successful
                     </Typography>
                     <Typography variant="body1">
-                        Four SKUs have been submitted for review. It will be added once verified.
+                        Your SKUs have been submitted for review. It will be added once verified.
                     </Typography>
                     <Button
                         variant="contained"
