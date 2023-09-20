@@ -3,7 +3,6 @@ import { Box, Button, Checkbox, CircularProgress, Container, Divider, FormContro
 import { useParams } from 'react-router-dom';
 import jwtDecode from 'jwt-decode';
 import { binaryStringToBlob, getMimeTypeFromFileName } from '../../../util';
-import Handsontable from 'handsontable';
 import Attachment from '../../attachment/Attachment';
 
 export default function ReviewPO() {

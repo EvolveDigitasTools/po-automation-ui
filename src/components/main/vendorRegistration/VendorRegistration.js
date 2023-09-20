@@ -27,7 +27,7 @@ import { getMimeTypeFromFileName } from "../../../util";
 export default function VendorRegistration() {
     const [isDetailSubmitted, setIsDetailSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [title, setTitle] = useState("Vendor Registration");
+    const [title, setTitle] = useState("");
     const [commentData, setCommentData] = useState("");
     const [submit, setSubmit] = useState(false)
     const [vendorCode, setVendorCode] = useState("")
@@ -68,6 +68,7 @@ export default function VendorRegistration() {
     const [countryStateCityData, setCountryStateCityData] = useState([]);
     const [stateCityData, setStateCityData] = useState([]);
     const [cityData, setCityData] = useState([]);
+    const [isValidGST, setValidGST] = useState(true);
     const categories = [
         "Electronics & Mobiles",
         "Appliances",
@@ -78,6 +79,7 @@ export default function VendorRegistration() {
         "Baby Products",
         "Beauty & Personal Care",
         "Grocery",
+        "Others"
     ];
 
     //ComponentDidMount
@@ -319,12 +321,7 @@ export default function VendorRegistration() {
                 );
             }
         }
-
-        // Data is valid, make an API request to send the data
-        // Example using fetch API
-        // for (var key of formData.entries()) {
-        //     console.log(key[0] + ", " + key[1]);
-        // }
+        
         if (vendorCode && vendorCode.length > 0) {
             fetch(`${process.env.REACT_APP_SERVER_URL}vendor/update/${vendorCode}`, {
                 method: "PUT",
@@ -369,6 +366,15 @@ export default function VendorRegistration() {
             setDynamicFields(newFields);
         }
     };
+
+    const updateGST = (newGst) => {
+        const validateGST = (newGst) => {
+            const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[A-Z0-9]{1}$/;
+            return gstRegex.test(newGst);
+        }
+        setValidGST(validateGST(newGst))
+        setGst(newGst)
+    } 
 
     const addNewField = () => {
         setDynamicFields([...dynamicFields, { key: "", value: "" }]);
@@ -543,9 +549,11 @@ export default function VendorRegistration() {
                                 id="gst"
                                 label="GST"
                                 value={gst}
-                                onChange={(e) => setGst(e.target.value)}
+                                onChange={(e) => updateGST(e.target.value)}
                                 fullWidth
                                 size="small"
+                                error={!isValidGST}
+                                helperText={!isValidGST ? 'Invalid GST' : ''}
                             />
                         </Grid>
                         <Grid item xs={6}>

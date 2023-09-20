@@ -15,6 +15,12 @@ import {
     Typography,
     Grid,
     IconButton,
+    TableContainer,
+    Table,
+    TableHead,
+    TableRow,
+    TableBody,
+    TableCell,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -65,10 +71,11 @@ export default function VendorDetails() {
     const [checkboxChecked, setCheckboxChecked] = useState(false);
     const [denyOpen, setDenyOpen] = useState(false);
     const [denyReason, setDenyReason] = useState("");
+    const [vendor, setVendor] = useState(null);
 
 
     const params = useParams();
-    const categories = ['Electronics & Mobiles', 'Appliances', 'Sports & Outdoors', 'Fashion & Apparel', 'Pet Supplies', 'Health & Welness', 'Baby Products', 'Beauty & Personal Care', 'Grocery'];
+    const categories = ['Electronics & Mobiles', 'Appliances', 'Sports & Outdoors', 'Fashion & Apparel', 'Pet Supplies', 'Health & Welness', 'Baby Products', 'Beauty & Personal Care', 'Grocery', 'Others'];
 
     //ComponentDidMount
     useEffect(() => {
@@ -150,6 +157,7 @@ export default function VendorDetails() {
                         setDynamicFieldsAttachments(dynamicFieldsAttachs)
                         setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
                     }
+                    setVendor(vendorDetails)
                 }
                 setVendorCode(vendorCode)
             }
@@ -282,7 +290,6 @@ export default function VendorDetails() {
                         edge="start"
                         color="inherit"
                         aria-label="back"
-                    // onClick={() => handleBack()}
                     >
                         <ArrowBack />Back
                     </IconButton>
@@ -704,10 +711,6 @@ export default function VendorDetails() {
                                 file={agreementAttachment}
                             />
                         </Grid>
-                        <Grid item xs={6}>
-                        </Grid>
-                        <Grid item xs={6}>
-                        </Grid>
                         {dynamicFields.map((field, index) => (
                             <>
                                 <Grid item xs={6}>
@@ -729,6 +732,54 @@ export default function VendorDetails() {
                                 </Grid>
                             </>
                         ))}
+                        {params.vendorCode && vendor?.skus.length > 0 && <Grid item xs={12}>
+                            <h2>SKUs</h2>
+                        </Grid>}
+                        {params.vendorCode && vendor?.skus.length > 0 && <Grid item xs={12}>
+                            <TableContainer component={Paper}>
+                                <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
+                                    <TableHead>
+                                        <TableRow>
+                                            {Object.keys(vendor.skus[0]).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {vendor.skus.map((row, i) => (
+                                            <TableRow
+                                                key={i}
+                                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                            >
+                                                {Object.values(row).map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Grid>}
+                        {params.vendorCode && vendor?.buyingOrders.length > 0 && <Grid item xs={12}>
+                            <h2>POs</h2>
+                        </Grid>}
+                        {params.vendorCode && vendor?.buyingOrders.length > 0 && <Grid item xs={12}>
+                            <TableContainer component={Paper}>
+                                <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
+                                    <TableHead>
+                                        <TableRow>
+                                            {Object.keys(vendor.buyingOrders[0]).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {vendor.skus.map((row, i) => (
+                                            <TableRow
+                                                key={i}
+                                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                            >
+                                                {Object.values(row).map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Grid>}
                     </Grid>
                     <br />
                     <Divider />

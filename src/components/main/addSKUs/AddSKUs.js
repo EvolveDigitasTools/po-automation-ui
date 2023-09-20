@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
-import { Autocomplete, Button, Container, Grid, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Autocomplete, Button, CircularProgress, Container, Grid, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import "./AddSku.css";
 import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
@@ -15,6 +15,7 @@ export default function AddSKUs() {
     const [vendors, setVendors] = useState([]);
     const [vendor, setVendor] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(true)
     const [createdBy, setCreatedBy] = useState("");
 
     //ComponentDidMount
@@ -26,6 +27,7 @@ export default function AddSKUs() {
                 if (vendor)
                     setVendor(vendor)
                 setVendors(res.data.vendors);
+                setLoading(false)
             })
             .catch((error) => {
                 console.error("API error:", error);
@@ -119,11 +121,12 @@ export default function AddSKUs() {
         setSKUAtt(file)
     }
 
-    const handleFileChange = async (e) => {
+    const addSKUs = async (e) => {
         e.preventDefault();
         setSubmit(true)
         if (!skuAtt)
             return
+        setLoading(true)
         const parsedData = excelData
 
         const keys = [
@@ -185,11 +188,24 @@ export default function AddSKUs() {
                 body: mailFormData,
             })
             const mailData = await mailSKUResp.json()
-            if(mailData.success)
-            setSuccess(true)
+            if(mailData.success){
+                setSuccess(true)
+                setLoading(false)
+            }
         }
     };
-    if (success)
+    if (loading)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                    <CircularProgress />
+                    <Typography variant="h4" gutterBottom>
+                        Loading...
+                    </Typography>
+                </Paper>
+            </Container>
+        );
+    else if (success)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
                 <Paper
@@ -229,7 +245,7 @@ export default function AddSKUs() {
                     <ArrowBack />Back
                 </IconButton>
             </Link>
-            <form onSubmit={handleFileChange}>
+            <form onSubmit={addSKUs}>
                 <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
                     <Grid item xs={6}>
                         <h1>Add New SKUs</h1>
