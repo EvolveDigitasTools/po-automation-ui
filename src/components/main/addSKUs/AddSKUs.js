@@ -46,6 +46,7 @@ export default function AddSKUs() {
             [
                 "SKU*",
                 "Category*",
+                "Sub-Category",
                 "Brand*",
                 "Product Title*",
                 "HSN*",
@@ -132,6 +133,7 @@ export default function AddSKUs() {
         const keys = [
             "skuCode",
             "category",
+            "subCategory",
             "brand",
             "productTitle",
             "hsn",
