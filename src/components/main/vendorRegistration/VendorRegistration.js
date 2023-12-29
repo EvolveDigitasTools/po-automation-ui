@@ -248,7 +248,8 @@ export default function VendorRegistration() {
         setCountry(newValue);
         if (newValue.states && newValue.states.length > 0)
             setStateCityData(newValue.states);
-        elsesteCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
+        else
+            setCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
         setState(null);
         setCity(null);
         setCityData([]);
