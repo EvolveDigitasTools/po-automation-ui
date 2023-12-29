@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { Button, TextField } from "@mui/material";
 
 export default function Login() {
   const [userName, setUserName] = useState('');
   const [pass, setPass] = useState('');
-  const { login } = useAuth();
+  const { login, userToken } = useAuth();
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (userToken)
+      navigate('/admin')
+  }, [userToken])
 
   async function loginUser(e) {
     e.preventDefault();
@@ -18,12 +25,12 @@ export default function Login() {
       body: formData
     })
     const loginData = await loginResponse.json()
-    if(loginData?.success) {
+    if (loginData?.success) {
       login(loginData.data.token)
       window.location.reload()
     }
     else
-    alert("Either email or password incorrect")
+      alert("Either email or password incorrect")
   }
 
   return (

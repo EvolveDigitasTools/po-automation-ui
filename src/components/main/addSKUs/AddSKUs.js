@@ -115,6 +115,11 @@ export default function AddSKUs() {
         const parsedData = [];
 
         worksheet.eachRow((row) => {
+            row.values = row.values.map(data => typeof data === 'object' ? data.text : data)
+            for (let i = 0; i < row.values.length; i++) {
+                if (!row.values[i])
+                    row.values[i] = null
+            }
             parsedData.push(row.values);
         });
 
@@ -178,10 +183,10 @@ export default function AddSKUs() {
                 body: formData,
             })
             const skuData = await skuResp.json()
-            if(skuData.success)
-            successRows++;
+            if (skuData.success)
+                successRows++;
         }
-        if(successRows == (parsedData.length-1)){
+        if (successRows == (parsedData.length - 1)) {
             const mailFormData = new FormData();
             mailFormData.append("vendorCode", vendor.vendorCode)
             const sendMailSkuURL = `${process.env.REACT_APP_SERVER_URL}sku/send-verify-mail`
@@ -190,7 +195,7 @@ export default function AddSKUs() {
                 body: mailFormData,
             })
             const mailData = await mailSKUResp.json()
-            if(mailData.success){
+            if (mailData.success) {
                 setSuccess(true)
                 setLoading(false)
             }

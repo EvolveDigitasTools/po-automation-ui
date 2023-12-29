@@ -39,7 +39,7 @@ export default function VendorRegistration() {
     const [contactPersonEmail, setContactPersonEmail] = useState("");
     const [contactPersonPhone, setContactPersonPhone] = useState("");
     const [isValidPhone, setIsValidPhone] = useState(true);
-    const [productCategory, setProductCategory] = useState("");
+    const [productCategory, setProductCategory] = useState(null);
     const [gst, setGst] = useState("");
     const [gstAttachment, setGstAttachment] = useState(null);
     const [addressLine1, setAddressLine1] = useState("");
@@ -248,8 +248,7 @@ export default function VendorRegistration() {
         setCountry(newValue);
         if (newValue.states && newValue.states.length > 0)
             setStateCityData(newValue.states);
-        else
-            setStateCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
+        elsesteCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
         setState(null);
         setCity(null);
         setCityData([]);
@@ -297,8 +296,8 @@ export default function VendorRegistration() {
         formData.append("ifsc", ifsc);
         formData.append("bankName", bankName);
         formData.append("branch", branch);
-        if(email)
-        formData.append("createdBy", email)
+        if (email)
+            formData.append("createdBy", email)
         if (coi.length > 0) formData.append("coi", coi);
         if (msme.length > 0) formData.append("msme", msme);
         if (tradeMark.length > 0) formData.append("tradeMark", tradeMark);
@@ -321,7 +320,7 @@ export default function VendorRegistration() {
                 );
             }
         }
-        
+
         if (vendorCode && vendorCode.length > 0) {
             fetch(`${process.env.REACT_APP_SERVER_URL}vendor/update/${vendorCode}`, {
                 method: "PUT",
@@ -374,7 +373,7 @@ export default function VendorRegistration() {
         }
         setValidGST(validateGST(newGst))
         setGst(newGst)
-    } 
+    }
 
     const addNewField = () => {
         setDynamicFields([...dynamicFields, { key: "", value: "" }]);
@@ -482,25 +481,16 @@ export default function VendorRegistration() {
                         <Grid item xs={6}>
                             <Autocomplete
                                 disablePortal
-                                size="small"
                                 id="category"
+                                size="small"
                                 options={categories}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        {...params}
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password",
-                                            style: { width: "auto" },
-                                        }}
-                                        label="Category"
-                                    />
-                                )}
+                                renderInput={(params) => <TextField
+                                    {...params}
+                                    label="Category"
+                                    required
+                                />}
                                 value={productCategory}
-                                onChange={(e, newValue) =>
-                                    setProductCategory(newValue)
-                                }
+                                onChange={(e, newValue) => setProductCategory(newValue)}
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -523,9 +513,7 @@ export default function VendorRegistration() {
                                 label="Contact Person Email"
                                 type="email"
                                 value={contactPersonEmail}
-                                onChange={(e) =>
-                                    setContactPersonEmail(e.target.value)
-                                }
+                                onChange={(e) => setContactPersonEmail(e.target.value)}
                                 fullWidth
                                 size="small"
                             />

@@ -7,9 +7,7 @@ export default function AuthLayout() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (userToken)
-            navigate('/admin')
-        else
+        if (!userToken)
             navigate('/admin/login')
     }, [userToken])
 
