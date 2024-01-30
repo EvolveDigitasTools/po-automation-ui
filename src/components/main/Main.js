@@ -69,6 +69,10 @@ export default function Main() {
         navigate(`/admin/vendor/${vendorRow}`);
     }
 
+    function showPORecords() {
+        navigate('/admin/po-records');
+    }
+
     function addSKUs() {
         if (selectedRow) navigate(`/admin/new-skus/${selectedRow}`);
         else navigate(`/admin/new-skus/new`);
@@ -100,7 +104,7 @@ export default function Main() {
                 aria-label="outlined primary button group"
                 style={{ float: 'right', padding: '10px'}}
             >
-                {/* {selectedRow != "" && <Button onClick={showDetails} style={buttonStyle}>Show Details</Button>} */}
+                <Button onClick={showPORecords} style={buttonStyle}>PO Records</Button>
                 <Button onClick={vendorRegistration} style={buttonStyle}>
                     Vendor Registration
                 </Button>

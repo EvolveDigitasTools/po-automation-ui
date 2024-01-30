@@ -10,6 +10,7 @@ import AuthLayout from "./components/auth/AuthLayout";
 import Login from "./components/Login/Login";
 import VerifySKUs from "./components/main/verifySKUs/verifySKUs";
 import ReviewPO from "./components/main/reviewPO/ReviewPO";
+import PORecords from "./components/main/poRecords/poRecords";
 
 const getUserData = () =>
   new Promise((resolve) =>
@@ -37,6 +38,7 @@ export const router = createBrowserRouter(
             <Route path="login" element={<Login />} />
             <Route path="" element={<Main />} />
             <Route path="vendor-registration" element={<VendorRegistration />} />
+            <Route path="po-records" element={<PORecords />} />
             <Route path="new-skus/:vendorCode" element={<AddSKUs />} />
             <Route path="new-buying-order/:vendorCode" element={<AddBuyingOrder />} />
             <Route path="vendor/:vendorCode" element={<VendorDetails />} />
