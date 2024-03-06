@@ -271,14 +271,6 @@ export default function VendorDetails() {
                     <Typography variant="body1">
                         Your review is done. Details are mailed to creator of vendor
                     </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        style={{ marginTop: "1rem" }}
-                        onClick={() => window.location.reload()}
-                    >
-                        Go Back
-                    </Button>
                 </Paper>
             </Container>
         );
