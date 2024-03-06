@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import {
     TextField,
     Box,
     Button,
     Stack,
-    FormControlLabel,
-    Checkbox,
     Fab,
     Autocomplete,
     Container,
@@ -18,21 +16,30 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import "./vendorRegistration.css";
-import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
-import { Link, useParams } from "react-router-dom";
+import { ArrowBack } from "@mui/icons-material";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
 import Attachment from "../../attachment/Attachment";
 import { getMimeTypeFromFileName } from "../../../util";
+import { LoadingButton } from "@mui/lab";
+
+const configDetails = {
+    'title': {
+        'new-vendor': '',
+        'update-vendor': 'Update Vendor Details'
+    }
+}
 
 export default function VendorRegistration() {
-    const [isDetailSubmitted, setIsDetailSubmitted] = useState(false);
+    const [newVendorLoading, setNewVendorLoading] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [title, setTitle] = useState("");
+    const [mode, setMode] = useState('new-vendor')
     const [commentData, setCommentData] = useState("");
-    const [submit, setSubmit] = useState(false)
-    const [vendorCode, setVendorCode] = useState("")
+    const [submit, setSubmit] = useState(false);
+    const [vendorCode, setVendorCode] = useState("");
     let [email, setEmail] = useState(null);
     const params = useParams();
+    const navigate = useNavigate();
 
     const [companyName, setCompanyName] = useState("");
     const [contactPersonName, setContactPersonName] = useState("");
@@ -79,7 +86,7 @@ export default function VendorRegistration() {
         "Baby Products",
         "Beauty & Personal Care",
         "Grocery",
-        "Others"
+        "Others",
     ];
 
     //ComponentDidMount
@@ -101,18 +108,26 @@ export default function VendorRegistration() {
 
         const getFile = async (idType, id) => {
             try {
-                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
+                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`;
                 const fileResponse = await fetch(fileDetailsUrl);
                 const fileJson = await fileResponse.json();
-                const file = await fileJson?.data?.file
+                const file = await fileJson?.data?.file;
                 if (file)
-                    return new File([binaryStringToBlob(file.fileContent, getMimeTypeFromFileName(file.fileName))], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
+                    return new File(
+                        [
+                            binaryStringToBlob(
+                                file.fileContent,
+                                getMimeTypeFromFileName(file.fileName)
+                            ),
+                        ],
+                        file.fileName,
+                        { type: getMimeTypeFromFileName(file.fileName) }
+                    );
                 return file;
-            }
-            catch {
+            } catch {
                 return null;
             }
-        }
+        };
 
         const checkAndUseValidationToken = async (countryStateCityData) => {
             const validateToken = params.validateToken;
@@ -120,18 +135,44 @@ export default function VendorRegistration() {
             if (validateToken) {
                 const decodedToken = jwtDecode(validateToken);
                 if (decodedToken.type == "vendor-fail") {
-                    const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`
+                    const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${decodedToken.vendorCode}`;
                     const vendorResponse = await fetch(getVendorDetailsUrl);
                     const vendorJson = await vendorResponse.json();
                     const vendorDetails = vendorJson.data.vendor;
-                    const { companyName, comments, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
-                    setTitle("Update Vendor Details")
-                    let comment = ""
-                    comments.forEach(commentData => comment = comment.concat(commentData.comment + "\n"));
-                    setCommentData(comment)
-                    const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
-                    const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
-                    const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
+                    const {
+                        companyName,
+                        comments,
+                        productCategory,
+                        contactPerson,
+                        gst,
+                        address,
+                        vendorBank,
+                        msme,
+                        coi,
+                        tradeMark,
+                        otherFields,
+                    } = vendorDetails;
+                    setMode("vendor-update");
+                    let comment = "";
+                    comments.forEach(
+                        (commentData) =>
+                            (comment = comment.concat(
+                                commentData.comment + "\n"
+                            ))
+                    );
+                    setCommentData(comment);
+                    const gstAtt = await getFile(
+                        "gstAttVendorId",
+                        vendorDetails.id
+                    );
+                    const proofAtt = await getFile(
+                        "vendorBankId",
+                        vendorDetails.vendorBank.id
+                    );
+                    const agreementAtt = await getFile(
+                        "agreementAttVendorId",
+                        vendorDetails.id
+                    );
                     setCompanyName(companyName);
                     setProductCategory(productCategory);
                     setContactPersonName(contactPerson.name);
@@ -139,83 +180,113 @@ export default function VendorRegistration() {
                     setContactPersonPhone(contactPerson.phoneNumber);
                     setGst(gst);
                     setGstAttachment(gstAtt);
-                    setAddressLine1(address.addressLine1)
+                    setAddressLine1(address.addressLine1);
                     if (address.addressLine2)
-                        setAddressLine2(address.addressLine2)
-                    const tempCountry = countryStateCityData.find(country => country.name == address.country)
-                    setCountry(tempCountry)
+                        setAddressLine2(address.addressLine2);
+                    const tempCountry = countryStateCityData.find(
+                        (country) => country.name == address.country
+                    );
+                    setCountry(tempCountry);
                     if (tempCountry?.states.length > 0) {
-                        setStateCityData(tempCountry.states)
-                        const tempState = tempCountry.states.find(state => state.name == address.state)
-                        setState(tempState)
+                        setStateCityData(tempCountry.states);
+                        const tempState = tempCountry.states.find(
+                            (state) => state.name == address.state
+                        );
+                        setState(tempState);
                         if (tempState.cities.length > 0) {
-                            setCityData(tempState.cities)
-                            const tempCity = tempState.cities.find(city => city.name == address.city)
-                            setCity(tempCity)
+                            setCityData(tempState.cities);
+                            const tempCity = tempState.cities.find(
+                                (city) => city.name == address.city
+                            );
+                            setCity(tempCity);
+                        } else {
+                            setCityData([{ name: "Not Applicable" }]);
+                            setCity({ name: "Not Applicable" });
                         }
-                        else {
-                            setCityData([{ name: "Not Applicable" }])
-                            setCity({ name: "Not Applicable" })
-                        }
+                    } else {
+                        setStateCityData([
+                            {
+                                name: "Not Applicable",
+                                cities: [{ name: "Not Applicable" }],
+                            },
+                        ]);
+                        setState({
+                            name: "Not Applicable",
+                            cities: [{ name: "Not Applicable" }],
+                        });
+                        setCityData([{ name: "Not Applicable" }]);
+                        setCity({ name: "Not Applicable" });
                     }
-                    else {
-                        setStateCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }])
-                        setState({ name: "Not Applicable", cities: [{ name: "Not Applicable" }] })
-                        setCityData([{ name: "Not Applicable" }])
-                        setCity({ name: "Not Applicable" })
-                    }
-                    setPostalCode(address.postalCode)
-                    setBeneficiary(vendorBank.beneficiaryName)
-                    setBankName(vendorBank.bankName)
-                    setAccountNumber(vendorBank.accountNumber)
-                    setBranch(vendorBank.branch)
-                    setIfsc(vendorBank.ifsc)
-                    setBankAttachment(proofAtt)
-                    setAgreementAttachment(agreementAtt)
-                    if (msme)
-                        setMsme(msme)
-                    let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
-                    setMsmeAttachment(msmeAtt)
-                    if (coi)
-                        setCoi(coi)
-                    let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
-                    setCoiAttachment(coiAtt)
-                    if (tradeMark)
-                        setTradeMark(tradeMark)
-                    let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
-                    setTradeAttachment(tradeMarkAtt)
+                    setPostalCode(address.postalCode);
+                    setBeneficiary(vendorBank.beneficiaryName);
+                    setBankName(vendorBank.bankName);
+                    setAccountNumber(vendorBank.accountNumber);
+                    setBranch(vendorBank.branch);
+                    setIfsc(vendorBank.ifsc);
+                    setBankAttachment(proofAtt);
+                    setAgreementAttachment(agreementAtt);
+                    if (msme) setMsme(msme);
+                    let msmeAtt = await getFile(
+                        "msmeAttVendorId",
+                        vendorDetails.id
+                    );
+                    setMsmeAttachment(msmeAtt);
+                    if (coi) setCoi(coi);
+                    let coiAtt = await getFile(
+                        "coiAttVendorId",
+                        vendorDetails.id
+                    );
+                    setCoiAttachment(coiAtt);
+                    if (tradeMark) setTradeMark(tradeMark);
+                    let tradeMarkAtt = await getFile(
+                        "tradeMarkAttVendorId",
+                        vendorDetails.id
+                    );
+                    setTradeAttachment(tradeMarkAtt);
                     if (otherFields && otherFields.length > 0) {
-                        let dynamicFieldsAttachs = []
+                        let dynamicFieldsAttachs = [];
                         for (let i = 0; i < otherFields.length; i++) {
                             const otherField = otherFields[i];
-                            let otherAttach = await getFile('vendorOtherId', otherField.id)
-                            dynamicFieldsAttachs.push(otherAttach)
+                            let otherAttach = await getFile(
+                                "vendorOtherId",
+                                otherField.id
+                            );
+                            dynamicFieldsAttachs.push(otherAttach);
                         }
-                        setDynamicFieldsAttachments(dynamicFieldsAttachs)
-                        setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
+                        setDynamicFieldsAttachments(dynamicFieldsAttachs);
+                        setDynamicFields(
+                            otherFields.map((otherField) => {
+                                return {
+                                    key: otherField.otherKey,
+                                    value: otherField.otherValue,
+                                };
+                            })
+                        );
                     }
                 }
-                setVendorCode(decodedToken.vendorCode)
+                setVendorCode(decodedToken.vendorCode);
+            } else if (
+                window.location.pathname == "/admin/vendor-registration"
+            ) {
+                setEmail("");
             }
-            else if (window.location.pathname == "/admin/vendor-registration") {
-                setEmail('')
-            }
-        }
+        };
 
         const getCountryStateCitydata = async () => {
-            const countryStateCityDataURL = "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
-            const dataResponse = await fetch(countryStateCityDataURL)
+            const countryStateCityDataURL =
+                "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
+            const dataResponse = await fetch(countryStateCityDataURL);
             const data = await dataResponse.json();
             setCountryStateCityData(data);
             return data;
-        }
+        };
 
         const asyncUseEffect = async () => {
             let countryStateCityData = await getCountryStateCitydata();
             await checkAndUseValidationToken(countryStateCityData);
-            setLoading(false)
-        }
-        asyncUseEffect()
+            setLoading(false);
+        };
+        asyncUseEffect();
 
         return () => {
             // This code will run when the component is unmounted
@@ -226,7 +297,8 @@ export default function VendorRegistration() {
 
     const onPhoneChange = (e) => {
         const inputValue = e.target.value;
-        const phoneNumberPattern = /^\+?\d{1,4}[-.\/\s]?\(?\d{1,4}\)?[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}$/; // Adjust this regex based on your specific validation criteria
+        const phoneNumberPattern =
+            /^\+?\d{1,4}[-.\/\s]?\(?\d{1,4}\)?[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}[-.\/\s]?\d{1,9}$/; // Adjust this regex based on your specific validation criteria
 
         // Test if the input matches the phone number pattern
         const isValidPhoneNumber = phoneNumberPattern.test(inputValue);
@@ -249,7 +321,12 @@ export default function VendorRegistration() {
         if (newValue.states && newValue.states.length > 0)
             setStateCityData(newValue.states);
         else
-            setCityData([{ name: "Not Applicable", cities: [{ name: "Not Applicable" }] }]);
+            setCityData([
+                {
+                    name: "Not Applicable",
+                    cities: [{ name: "Not Applicable" }],
+                },
+            ]);
         setState(null);
         setCity(null);
         setCityData([]);
@@ -273,10 +350,10 @@ export default function VendorRegistration() {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!gstAttachment || !bankAttachment || !agreementAttachment) {
-            setSubmit(true)
-            return
+            setSubmit(true);
+            return;
         }
-        setLoading(true);
+        setNewVendorLoading(true);
         // Do something with the form data, like sending it to a server
         const formData = new FormData();
 
@@ -297,8 +374,7 @@ export default function VendorRegistration() {
         formData.append("ifsc", ifsc);
         formData.append("bankName", bankName);
         formData.append("branch", branch);
-        if (email)
-            formData.append("createdBy", email)
+        if (email) formData.append("createdBy", email);
         if (coi.length > 0) formData.append("coi", coi);
         if (msme.length > 0) formData.append("msme", msme);
         if (tradeMark.length > 0) formData.append("tradeMark", tradeMark);
@@ -323,30 +399,35 @@ export default function VendorRegistration() {
         }
 
         if (vendorCode && vendorCode.length > 0) {
-            fetch(`${process.env.REACT_APP_SERVER_URL}vendor/update/${vendorCode}`, {
-                method: "PUT",
-                body: formData
-            })
+            fetch(
+                `${process.env.REACT_APP_SERVER_URL}vendor/update/${vendorCode}`,
+                {
+                    method: "PUT",
+                    body: formData,
+                }
+            )
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.success) {
-                        setIsDetailSubmitted(true);
-                        setLoading(false);
+                        navigate("/success");
+                        setNewVendorLoading(false);
                     }
                 })
-                .catch(error => console.error(error))
-        }
-        else {
+                .catch((error) => console.error(error));
+        } else {
             fetch(`${process.env.REACT_APP_SERVER_URL}vendor/new`, {
                 method: "POST",
                 body: formData,
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    setIsDetailSubmitted(true);
-                    setLoading(false);
-                    // console.log("API response:", data);
-                    // Handle the response as needed
+                    if (data.success) {
+                        navigate("/success");
+                        setNewVendorLoading(false);
+                    } else {
+                        alert(data.message);
+                        setNewVendorLoading(false);
+                    }
                 })
                 .catch((error) => {
                     console.error("API error:", error);
@@ -369,12 +450,13 @@ export default function VendorRegistration() {
 
     const updateGST = (newGst) => {
         const validateGST = (newGst) => {
-            const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[A-Z0-9]{1}$/;
+            const gstRegex =
+                /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[A-Z0-9]{1}$/;
             return gstRegex.test(newGst);
-        }
-        setValidGST(validateGST(newGst))
-        setGst(newGst)
-    }
+        };
+        setValidGST(validateGST(newGst));
+        setGst(newGst);
+    };
 
     const addNewField = () => {
         setDynamicFields([...dynamicFields, { key: "", value: "" }]);
@@ -393,7 +475,10 @@ export default function VendorRegistration() {
     if (loading)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
-                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
                     <CircularProgress />
                     <Typography variant="h4" gutterBottom>
                         Loading...
@@ -401,47 +486,23 @@ export default function VendorRegistration() {
                 </Paper>
             </Container>
         );
-    else if (isDetailSubmitted)
-        return (
-            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
-                <Paper
-                    elevation={3}
-                    style={{ padding: "2rem", textAlign: "center" }}
-                >
-                    <CheckCircleOutline
-                        sx={{ fontSize: 100, color: "green" }}
-                    />
-                    <Typography variant="h4" gutterBottom>
-                        Submission Successful
-                    </Typography>
-                    <Typography variant="body1">
-                        Your registration is succesful, you can contact our team for purchase order.
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        style={{ marginTop: "1rem" }}
-                        onClick={() => window.location.reload()}
-                    >
-                        Go Back
-                    </Button>
-                </Paper>
-            </Container>
-        );
     else
         return (
             <div className="vendor-main-container">
-                {window.location.pathname == "/admin/vendor-registration" && <Link to="/admin">
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="back"
-                    // onClick={() => handleBack()}
-                    >
-                        <ArrowBack />Back
-                    </IconButton>
-                </Link>}
-                <h1>{title}</h1>
+                {window.location.pathname === "/admin/vendor-registration" && (
+                    <Link to="/admin">
+                        <IconButton
+                            edge="start"
+                            color="inherit"
+                            aria-label="back"
+                            // onClick={() => handleBack()}
+                        >
+                            <ArrowBack />
+                            Back
+                        </IconButton>
+                    </Link>
+                )}
+                <h1>{configDetails.title[mode]}</h1>
 
                 {commentData.length > 0 && (
                     <TextField
@@ -464,7 +525,11 @@ export default function VendorRegistration() {
                 )}
 
                 <Stack component="form" onSubmit={handleSubmit}>
-                    <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                    <Grid
+                        container
+                        rowSpacing={1}
+                        columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                    >
                         <Grid item xs={12}>
                             <h2>Company Details</h2>
                         </Grid>
@@ -485,13 +550,17 @@ export default function VendorRegistration() {
                                 id="category"
                                 size="small"
                                 options={categories}
-                                renderInput={(params) => <TextField
-                                    {...params}
-                                    label="Category"
-                                    required
-                                />}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Category"
+                                        required
+                                    />
+                                )}
                                 value={productCategory}
-                                onChange={(e, newValue) => setProductCategory(newValue)}
+                                onChange={(e, newValue) =>
+                                    setProductCategory(newValue)
+                                }
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -514,7 +583,9 @@ export default function VendorRegistration() {
                                 label="Contact Person Email"
                                 type="email"
                                 value={contactPersonEmail}
-                                onChange={(e) => setContactPersonEmail(e.target.value)}
+                                onChange={(e) =>
+                                    setContactPersonEmail(e.target.value)
+                                }
                                 fullWidth
                                 size="small"
                             />
@@ -527,7 +598,9 @@ export default function VendorRegistration() {
                                 value={contactPersonPhone}
                                 onChange={onPhoneChange}
                                 error={!isValidPhone}
-                                helperText={!isValidPhone ? 'Invalid phone number' : ''}
+                                helperText={
+                                    !isValidPhone ? "Invalid phone number" : ""
+                                }
                                 fullWidth
                                 size="small"
                             />
@@ -542,16 +615,14 @@ export default function VendorRegistration() {
                                 fullWidth
                                 size="small"
                                 error={!isValidGST}
-                                helperText={!isValidGST ? 'Invalid GST' : ''}
+                                helperText={!isValidGST ? "Invalid GST" : ""}
                             />
                         </Grid>
                         <Grid item xs={6}>
                             <Attachment
                                 label="GST Attachment"
                                 file={gstAttachment}
-                                updateFile={(file) =>
-                                    setGstAttachment(file)
-                                }
+                                updateFile={(file) => setGstAttachment(file)}
                                 required={true}
                                 submit={submit}
                             />
@@ -567,7 +638,9 @@ export default function VendorRegistration() {
                                 value={addressLine1}
                                 fullWidth
                                 size="small"
-                                onChange={(e) => setAddressLine1(e.target.value)}
+                                onChange={(e) =>
+                                    setAddressLine1(e.target.value)
+                                }
                             />
                         </Grid>
                         <Grid item xs={12}>
@@ -577,7 +650,9 @@ export default function VendorRegistration() {
                                 id="address-line-2"
                                 label="Address Line 2"
                                 value={addressLine2}
-                                onChange={(e) => setAddressLine2(e.target.value)}
+                                onChange={(e) =>
+                                    setAddressLine2(e.target.value)
+                                }
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -673,9 +748,7 @@ export default function VendorRegistration() {
                                     />
                                 )}
                                 value={city}
-                                onChange={(e, newValue) =>
-                                    setCity(newValue)
-                                }
+                                onChange={(e, newValue) => setCity(newValue)}
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -685,9 +758,7 @@ export default function VendorRegistration() {
                                 id="postal-code"
                                 type="number"
                                 value={postalCode}
-                                onChange={(e) =>
-                                    setPostalCode(e.target.value)
-                                }
+                                onChange={(e) => setPostalCode(e.target.value)}
                                 fullWidth
                                 size="small"
                             />
@@ -701,9 +772,7 @@ export default function VendorRegistration() {
                                 id="beneficiary"
                                 label="Beneficiary Name"
                                 value={beneficiary}
-                                onChange={(e) =>
-                                    setBeneficiary(e.target.value)
-                                }
+                                onChange={(e) => setBeneficiary(e.target.value)}
                                 fullWidth
                                 size="small"
                             />
@@ -714,9 +783,7 @@ export default function VendorRegistration() {
                                 id="bank-name"
                                 label="Bank Name"
                                 value={bankName}
-                                onChange={(e) =>
-                                    setBankName(e.target.value)
-                                }
+                                onChange={(e) => setBankName(e.target.value)}
                                 fullWidth
                                 size="small"
                             />
@@ -760,9 +827,7 @@ export default function VendorRegistration() {
                             <Attachment
                                 label="Bank Proof"
                                 file={bankAttachment}
-                                updateFile={(file) =>
-                                    setBankAttachment(file)
-                                }
+                                updateFile={(file) => setBankAttachment(file)}
                                 required={true}
                                 submit={submit}
                             />
@@ -775,9 +840,7 @@ export default function VendorRegistration() {
                                 id="msme"
                                 label="MSME"
                                 value={msme}
-                                onChange={(e) =>
-                                    setMsme(e.target.value)
-                                }
+                                onChange={(e) => setMsme(e.target.value)}
                                 fullWidth
                                 size="small"
                             />
@@ -811,9 +874,7 @@ export default function VendorRegistration() {
                                 id="trade-mark"
                                 label="Trade Mark"
                                 value={tradeMark}
-                                onChange={(e) =>
-                                    setTradeMark(e.target.value)
-                                }
+                                onChange={(e) => setTradeMark(e.target.value)}
                                 fullWidth
                                 size="small"
                             />
@@ -827,48 +888,40 @@ export default function VendorRegistration() {
                         </Grid>
                         <Grid item className="agreementLabel" xs={6}>
                             <h4>
-                                Signed and Stamped Agreement by Both
-                                Parties
+                                Signed and Stamped Agreement by Both Parties
                             </h4>
                         </Grid>
                         <Grid item xs={6}>
                             <Attachment
                                 label="Agreement Attachment"
                                 file={agreementAttachment}
-                                updateFile={(file) => setAgreementAttachment(file)}
+                                updateFile={(file) =>
+                                    setAgreementAttachment(file)
+                                }
                                 required={true}
                                 submit={submit}
                             />
                         </Grid>
                         {dynamicFields.map((field, index) => (
-                            <>
+                            <Fragment key={index}>
                                 <Grid item xs={2}>
                                     <TextField
                                         required
                                         label="Key"
                                         value={field.key}
                                         onChange={(e) =>
-                                            handleFieldChange(
-                                                e,
-                                                index,
-                                                "key"
-                                            )
+                                            handleFieldChange(e, index, "key")
                                         }
                                         fullWidth
                                         size="small"
                                     />
-
                                 </Grid>
                                 <Grid item xs={4}>
                                     <TextField
                                         label="Value"
                                         value={field.value}
                                         onChange={(e) =>
-                                            handleFieldChange(
-                                                e,
-                                                index,
-                                                "value"
-                                            )
+                                            handleFieldChange(e, index, "value")
                                         }
                                         fullWidth
                                         size="small"
@@ -878,7 +931,13 @@ export default function VendorRegistration() {
                                     <Attachment
                                         label="Attachment"
                                         file={dynamicFieldsAttachments[index]}
-                                        updateFile={(file) => handleFieldChange(file, index, "attachment")}
+                                        updateFile={(file) =>
+                                            handleFieldChange(
+                                                file,
+                                                index,
+                                                "attachment"
+                                            )
+                                        }
                                     />
                                 </Grid>
                                 <Grid item xs={0.7}>
@@ -886,17 +945,15 @@ export default function VendorRegistration() {
                                         color="error"
                                         aria-label="delete"
                                         className="dynamic-icon"
-                                        onClick={() =>
-                                            handleRemoveField(index)
-                                        }
+                                        onClick={() => handleRemoveField(index)}
                                         size="small"
                                     >
                                         <DeleteIcon />
                                     </Fab>
                                 </Grid>
-                            </>
+                            </Fragment>
                         ))}
-                        {email?.length >= 0 &&
+                        {email?.length >= 0 && (
                             <Grid item xs={6}>
                                 <TextField
                                     required
@@ -904,18 +961,21 @@ export default function VendorRegistration() {
                                     label="Your Email"
                                     type="email"
                                     value={email}
-                                    onChange={(e) =>
-                                        setEmail(e.target.value)
-                                    }
+                                    onChange={(e) => setEmail(e.target.value)}
                                     fullWidth
                                     size="small"
                                 />
                             </Grid>
-                        }
-                        {email?.length >= 0 &&
-                            <Grid item xs={6}></Grid>
-                        }
-                        <Grid item xs={12} style={{ display: "flex", justifyContent: "center" }}>
+                        )}
+                        {email?.length >= 0 && <Grid item xs={6}></Grid>}
+                        <Grid
+                            item
+                            xs={12}
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                            }}
+                        >
                             <Fab
                                 color="primary"
                                 className="dynamic-icon"
@@ -927,10 +987,28 @@ export default function VendorRegistration() {
                             </Fab>
                         </Grid>
                         <Grid item xs={12}>
-                            <Button variant="contained" color="primary" type="submit" fullWidth
-                                size="small">
-                                Submit
-                            </Button>
+                            {newVendorLoading ? (
+                                <LoadingButton
+                                    variant="contained"
+                                    color="primary"
+                                    type="submit"
+                                    fullWidth
+                                    loading
+                                    size="small"
+                                >
+                                    Submit
+                                </LoadingButton>
+                            ) : (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    type="submit"
+                                    fullWidth
+                                    size="small"
+                                >
+                                    Submit
+                                </Button>
+                            )}
                         </Grid>
                     </Grid>
                 </Stack>
