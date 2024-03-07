@@ -52,3 +52,8 @@ export const openInBrowserExtensions = [
     "ogg",
     "wav",
 ];
+
+export const labelToKey = (label, fieldsData) => {
+    const field = fieldsData.find(field => field.label === label);
+    return field ? field.key : null;
+  };

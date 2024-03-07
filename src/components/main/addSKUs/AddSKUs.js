@@ -1,33 +1,54 @@
 import { Link, useParams } from "react-router-dom";
 import ExcelJS from "exceljs";
-import { Autocomplete, Button, CircularProgress, Container, Grid, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import {
+    Autocomplete,
+    Button,
+    CircularProgress,
+    Container,
+    Grid,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import "./AddSku.css";
 import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
 import Attachment from "../../attachment/Attachment";
+import { skuSheetDownload } from "../../../utilities/excelUtilities";
+import { labelToKey } from "../../../utilities/utils";
+import { skuFields } from "../../../utilities/pofields";
+import { LoadingButton } from "@mui/lab";
 
 export default function AddSKUs() {
     const params = useParams();
     const vendorCode = params.vendorCode;
     const [excelData, setExcelData] = useState([]);
     const [skuAtt, setSKUAtt] = useState(null);
-    const [submit, setSubmit] = useState(false)
+    const [submit, setSubmit] = useState(false);
     const [vendors, setVendors] = useState([]);
     const [vendor, setVendor] = useState(null);
     const [success, setSuccess] = useState(false);
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(true);
+    const [submitLoading, setSubmitLoading] = useState(false);
     const [createdBy, setCreatedBy] = useState("");
 
-    //ComponentDidMount
     useEffect(() => {
         fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
             .then((response) => response.json())
             .then((res) => {
-                let vendor = res.data.vendors.find(vendor => vendor.vendorCode == vendorCode)
-                if (vendor)
-                    setVendor(vendor)
+                let vendor = res.data.vendors.find(
+                    (vendor) => vendor.vendorCode === vendorCode
+                );
+                if (vendor) setVendor(vendor);
                 setVendors(res.data.vendors);
-                setLoading(false)
+                setLoading(false);
             })
             .catch((error) => {
                 console.error("API error:", error);
@@ -38,74 +59,7 @@ export default function AddSKUs() {
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
             console.log("Component unmounted");
         };
-    }, []);
-
-    const handleDownload = async () => {
-        // Sample data for the Excel file
-        const data = [
-            [
-                "SKU*",
-                "Category*",
-                "Sub-Category",
-                "Brand*",
-                "Product Title*",
-                "HSN*",
-                "EAN*",
-                "Model Number*",
-                "Size",
-                "Color Family-Color",
-                "Prdct L(cm)*",
-                "Prdct B(cm)*",
-                "Prdct H(cm)*",
-                "Wght(kg)*",
-                "MSTRCTN Box Qty*",
-                "MSTRCTN L(cm)*",
-                "MSTRCTN B(cm)*",
-                "MSTRCTN H(cm)*",
-                "Wght(kg)*",
-                "MRP",
-            ],
-            // Add more data here
-        ];
-
-        // Create a new workbook
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("SKUs");
-
-        // Populate the worksheet with data
-        data.forEach((row) => {
-            worksheet.addRow(row);
-        });
-
-        data[0].forEach((title, columnIndex) => {
-            const column = worksheet.getColumn(columnIndex + 1);
-            let maxTitleLength = title.length;
-
-            // Iterate through data rows to find the maximum title length in the column
-            // data.slice(1).forEach((row) => {
-            //   const cellValue = row[columnIndex];
-            //   if (cellValue && cellValue.length > maxTitleLength) {
-            //     maxTitleLength = cellValue.length;
-            //   }
-            // });
-
-            // Set the column width based on the maximum title length
-            column.width = maxTitleLength + 2; // You can adjust the additional width as needed
-        });
-
-        // Generate a Blob from the workbook
-        const blob = await workbook.xlsx.writeBuffer();
-
-        // Create a URL for the Blob and create a temporary anchor element to trigger download
-        const url = URL.createObjectURL(new Blob([blob]));
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "newSKU.xlsx";
-        a.click();
-
-        // Clean up by revoking the Blob URL
-        URL.revokeObjectURL(url);
-    };
+    }, [vendorCode]);
 
     const updateFile = async (file) => {
         const workbook = new ExcelJS.Workbook();
@@ -113,98 +67,58 @@ export default function AddSKUs() {
 
         const worksheet = workbook.getWorksheet(1);
         const parsedData = [];
-
-        worksheet.eachRow((row) => {
-            row.values = row.values.map(data => typeof data === 'object' ? data.text : data)
-            for (let i = 0; i < row.values.length; i++) {
-                if (!row.values[i])
-                    row.values[i] = null
+        let labels = [];
+        worksheet.eachRow((row, rowIndex) => {
+            if (rowIndex === 1) {
+                labels = row.values.slice(1); // slice(1) because ExcelJS rows are 1-based and row.values[0] is undefined
+            } else {
+                let rowData = row.values.slice(1);
+                rowData = rowData.map((data) =>
+                    typeof data === "object" ? data.text : data
+                );
+                const skuFieldsData = {};
+                rowData.forEach((value, index) => {
+                    const key = labelToKey(labels[index], skuFields);
+                    if (key) skuFieldsData[key] = value;
+                });
+                parsedData.push(skuFieldsData);
             }
-            parsedData.push(row.values);
         });
-
-        setExcelData(parsedData)
-        setSKUAtt(file)
-    }
+        setExcelData(parsedData);
+        setSKUAtt(file);
+    };
 
     const addSKUs = async (e) => {
         e.preventDefault();
-        setSubmit(true)
-        if (!skuAtt)
-            return
-        setLoading(true)
-        const parsedData = excelData
-
-        const keys = [
-            "skuCode",
-            "category",
-            "subCategory",
-            "brand",
-            "productTitle",
-            "hsn",
-            "ean",
-            "modelNumber",
-            "size",
-            "colorFamilyColor",
-            "productLengthCm",
-            "productBreadthCm",
-            "productHeightCm",
-            "productWeightKg",
-            "masterCartonQty",
-            "masterCartonLengthCm",
-            "masterCartonBreadthCm",
-            "masterCartonHeightCm",
-            "masterCartonWeightKg",
-            "MRP",
-            "vendorCode",
-        ];
-        let successRows = 0
-        for (let i = 1; i < parsedData.length; i++) {
-            const row = parsedData[i].slice(1);
-            console.log("row", i, row);
-            // Do something with the form data, like sending it to a server
-            const formData = new FormData();
-
-            for (let i = 0; i < row.length; i++) {
-                const value = row[i];
-                if (value) formData.append(keys[i], value);
-            }
-            formData.append("vendorCode", vendor.vendorCode);
-            formData.append("createdBy", createdBy);
-
-            // Data is valid, make an API request to send the data
-            // Example using fetch API
-            for (var key of formData.entries()) {
-                console.log(key[0] + ", " + key[1]);
-            }
-            const skuUrl = `${process.env.REACT_APP_SERVER_URL}sku/new`
-            const skuResp = await fetch(skuUrl, {
-                method: "POST",
-                body: formData,
-            })
-            const skuData = await skuResp.json()
-            if (skuData.success)
-                successRows++;
-        }
-        if (successRows == (parsedData.length - 1)) {
-            const mailFormData = new FormData();
-            mailFormData.append("vendorCode", vendor.vendorCode)
-            const sendMailSkuURL = `${process.env.REACT_APP_SERVER_URL}sku/send-verify-mail`
-            const mailSKUResp = await fetch(sendMailSkuURL, {
-                method: "POST",
-                body: mailFormData,
-            })
-            const mailData = await mailSKUResp.json()
-            if (mailData.success) {
-                setSuccess(true)
-                setLoading(false)
-            }
+        setSubmit(true);
+        if (!skuAtt) return;
+        setSubmitLoading(true);
+        const formData = new FormData();
+        console.log(JSON.parse(JSON.stringify(excelData)))
+        formData.append("createdBy", createdBy);
+        formData.append("skus", JSON.stringify(excelData));
+        console.log(excelData)
+        const skuUrl = `${process.env.REACT_APP_SERVER_URL}sku/new/${vendor.vendorCode}`;
+        const skuResp = await fetch(skuUrl, {
+            method: "POST",
+            body: formData,
+        });
+        const skuData = await skuResp.json();
+        if (skuData.success) {
+            setSuccess(true);
+            setSubmitLoading(false);
+        } else {
+            setSubmitLoading(false)
+            alert("Some problem occured. Please check your sku sheet or contact tech team")
         }
     };
     if (loading)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
-                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
                     <CircularProgress />
                     <Typography variant="h4" gutterBottom>
                         Loading...
@@ -226,16 +140,9 @@ export default function AddSKUs() {
                         Submission Successful
                     </Typography>
                     <Typography variant="body1">
-                        Your SKUs have been submitted for review. It will be added once verified.
+                        Your SKUs have been submitted for review. It will be
+                        added once verified.
                     </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        style={{ marginTop: "1rem" }}
-                        onClick={() => window.location.reload()}
-                    >
-                        Go Back
-                    </Button>
                 </Paper>
             </Container>
         );
@@ -247,20 +154,25 @@ export default function AddSKUs() {
                     edge="start"
                     color="inherit"
                     aria-label="back"
-                // onClick={() => handleBack()}
+                    // onClick={() => handleBack()}
                 >
-                    <ArrowBack />Back
+                    <ArrowBack />
+                    Back
                 </IconButton>
             </Link>
             <form onSubmit={addSKUs}>
-                <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                <Grid
+                    container
+                    rowSpacing={1}
+                    columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                >
                     <Grid item xs={6}>
                         <h1>Add New SKUs</h1>
                     </Grid>
                     <Grid item xs={6} style={{ margin: "auto" }}>
                         <Attachment
                             label="Download Sample SKU Excel"
-                            downloadFile={handleDownload}
+                            downloadFile={skuSheetDownload}
                         />
                     </Grid>
                     <Grid item xs={12}>
@@ -372,31 +284,75 @@ export default function AddSKUs() {
                             size="small"
                         />
                     </Grid>
-                    {excelData.length > 0 && <Grid item xs={12}>
-                        <TableContainer component={Paper}>
-                            <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
-                                <TableHead>
-                                    <TableRow>
-                                        {excelData[0].slice(1).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {excelData.slice(1).map((row, i) => (
-                                        <TableRow
-                                            key={i}
-                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                        >
-                                            {row.map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                    {excelData.length > 0 && (
+                        <Grid item xs={12}>
+                            <TableContainer component={Paper}>
+                                <Table
+                                    style={{ tableLayout: "auto" }}
+                                    size="small"
+                                    aria-label="a dense table"
+                                >
+                                    <TableHead>
+                                        <TableRow>
+                                            {skuFields.map((tableHead, i) => (
+                                                <TableCell key={i}>
+                                                    {tableHead.label}
+                                                </TableCell>
+                                            ))}
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Grid>}
+                                    </TableHead>
+                                    <TableBody>
+                                        {excelData.map((row, i) => (
+                                            <TableRow
+                                                key={i}
+                                                sx={{
+                                                    "&:last-child td, &:last-child th":
+                                                        { border: 0 },
+                                                }}
+                                            >
+                                                {skuFields.map(
+                                                    (skuField, i) => (
+                                                        <TableCell
+                                                            style={{
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                            key={i}
+                                                        >
+                                                            {row[skuField.key]}
+                                                        </TableCell>
+                                                    )
+                                                )}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Grid>
+                    )}
                     <Grid item xs={12}>
-                        <Button variant="contained" color="primary" type="submit" fullWidth size="small">
-                            Submit
-                        </Button>
+                        {submitLoading ? (
+                            <LoadingButton
+                                variant="contained"
+                                color="primary"
+                                type="submit"
+                                fullWidth
+                                loading
+                                size="small"
+                            >
+                                Submit
+                            </LoadingButton>
+                        ) : (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                type="submit"
+                                fullWidth
+                                size="small"
+                            >
+                                Submit
+                            </Button>
+                        )}
                     </Grid>
                 </Grid>
             </form>
