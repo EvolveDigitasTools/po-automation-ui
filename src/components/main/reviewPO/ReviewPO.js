@@ -1,87 +1,111 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Button, Checkbox, CircularProgress, Container, Divider, FormControlLabel, Grid, Paper, TextField, Typography } from '@mui/material';
-import { useParams } from 'react-router-dom';
-import jwtDecode from 'jwt-decode';
-import { binaryStringToBlob, getMimeTypeFromFileName } from '../../../util';
-import Attachment from '../../attachment/Attachment';
+import React, { useEffect, useState } from "react";
+import {
+    Box,
+    Button,
+    Checkbox,
+    CircularProgress,
+    Container,
+    Divider,
+    FormControlLabel,
+    Grid,
+    Paper,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { useParams } from "react-router-dom";
+import jwtDecode from "jwt-decode";
+import { binaryStringToBlob, getMimeTypeFromFileName } from "../../../util";
+import Attachment from "../../attachment/Attachment";
+import { CheckCircleOutline } from "@mui/icons-material";
 
 export default function ReviewPO() {
     const params = useParams();
-    const [loading, setLoading] = useState(true)
-    const [poCode, setPoCode] = useState('')
+    const [loading, setLoading] = useState(true);
+    const [poCode, setPoCode] = useState("");
     const [denyReason, setDenyReason] = useState("");
-    const [isReviewDone, setReviewDone] = useState(false)
+    const [isReviewDone, setReviewDone] = useState(false);
     const [denyOpen, setDenyOpen] = useState(false);
     const [buyingOrder, setBuyingOrder] = useState(null);
     const [vendor, setVendor] = useState(null);
     const [checkboxChecked, setCheckboxChecked] = useState(false);
     const [poFile, setPoFile] = useState(null);
 
-
     useEffect(() => {
         const validateToken = params.validateToken;
         const decodedToken = jwtDecode(validateToken);
-        const poCode = decodedToken.vendorCode
+        const poCode = decodedToken.vendorCode;
         fetch(`${process.env.REACT_APP_SERVER_URL}buying-order/${poCode}`)
             .then((response) => response.json())
             .then((res) => {
-                console.log(res)
-                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${'buyingOrderId'}/${res.data.buyingOrder.id}`
+                console.log(res);
+                const fileDetailsUrl = `${
+                    process.env.REACT_APP_SERVER_URL
+                }file/${"buyingOrderId"}/${res.data.buyingOrder.id}`;
                 fetch(fileDetailsUrl)
-                    .then(res => res.json())
-                    .then(data => {
-                        let file = data.data.file
-                        let nFile = new File([binaryStringToBlob(file.fileContent, getMimeTypeFromFileName(file.fileName))], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
+                    .then((res) => res.json())
+                    .then((data) => {
+                        let file = data.data.file;
+                        let nFile = new File(
+                            [
+                                binaryStringToBlob(
+                                    file.fileContent,
+                                    getMimeTypeFromFileName(file.fileName)
+                                ),
+                            ],
+                            file.fileName,
+                            { type: getMimeTypeFromFileName(file.fileName) }
+                        );
                         setPoFile(nFile);
-                    })
-                setBuyingOrder(res.data.buyingOrder)
-                setVendor(res.data.buyingOrder.vendor)
+                    });
+                setBuyingOrder(res.data.buyingOrder);
+                setVendor(res.data.buyingOrder.vendor);
+                setLoading(false);
             })
             .catch((error) => {
                 console.error("API error:", error);
                 // Handle the error
             });
-        setPoCode(poCode)
-        setLoading(false);
-        return () => {
-        };
-    }, []);
+        setPoCode(poCode);
+        return () => {};
+    }, [params.validateToken]);
 
     const validateNewPO = async (e, isRecordValid) => {
-        e.preventDefault()
-        setLoading(true)
+        e.preventDefault();
+        setLoading(true);
         const formData = new FormData();
         formData.append("poCode", poCode);
         formData.append("isValid", isRecordValid);
-        if (!isRecordValid)
-            formData.append("reason", denyReason);
+        if (!isRecordValid) formData.append("reason", denyReason);
 
-        const validateSKUUrl = `${process.env.REACT_APP_SERVER_URL}buying-order/review`
+        const validateSKUUrl = `${process.env.REACT_APP_SERVER_URL}buying-order/review`;
         const validationResponse = await fetch(validateSKUUrl, {
             method: "POST",
-            body: formData
+            body: formData,
         });
         const skuJSON = await validationResponse.json();
         if (skuJSON.success) {
-            setReviewDone(true)
-            setLoading(false)
+            setReviewDone(true);
+            setLoading(false);
         }
-    }
+    };
 
     const downloadFile = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         const url = URL.createObjectURL(poFile);
         const a = document.createElement("a");
         a.href = url;
         a.download = poFile.name;
         a.click();
         URL.revokeObjectURL(url);
-    }
+    };
 
     if (loading)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
-                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
                     <CircularProgress />
                     <Typography variant="h4" gutterBottom>
                         Loading...
@@ -89,10 +113,33 @@ export default function ReviewPO() {
                 </Paper>
             </Container>
         );
+    else if (isReviewDone)
+        return (
+            <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
+                    <CheckCircleOutline
+                        sx={{ fontSize: 100, color: "green" }}
+                    />
+                    <Typography variant="h4" gutterBottom>
+                        Submission Successful
+                    </Typography>
+                    <Typography variant="body1">
+                        Your verification is complete
+                    </Typography>
+                </Paper>
+            </Container>
+        );
 
     return (
         <div style={{ padding: "40px" }}>
-            <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+            <Grid
+                container
+                rowSpacing={1}
+                columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+            >
                 <Grid item xs={12}>
                     <h1>Review PO</h1>
                 </Grid>
@@ -175,7 +222,9 @@ export default function ReviewPO() {
                     <TextField
                         id="estimated-delivery-dates"
                         label="Estimated Delivery Dates"
-                        value={buyingOrder ? buyingOrder.estimatedDeliveryDate : ""}
+                        value={
+                            buyingOrder ? buyingOrder.estimatedDeliveryDate : ""
+                        }
                         InputProps={{
                             readOnly: true,
                         }}
@@ -215,16 +264,17 @@ export default function ReviewPO() {
                         downloadFile={downloadFile}
                     />
                 </Grid>
-
             </Grid>
             <Divider />
-            {params.validateToken &&
+            {params.validateToken && (
                 <>
                     <FormControlLabel
                         control={
                             <Checkbox
                                 color="primary"
-                                onChange={(e) => setCheckboxChecked(e.target.checked)}
+                                onChange={(e) =>
+                                    setCheckboxChecked(e.target.checked)
+                                }
                             />
                         }
                         label="I confirm that I have reviewed and verified all the po details."
@@ -237,7 +287,12 @@ export default function ReviewPO() {
                                     color="primary"
                                     fullWidth
                                     size="small"
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                    style={{
+                                        borderRadius: "50px",
+                                        fontSize: "18px",
+                                        fontWeight: "600",
+                                        textTransform: "none",
+                                    }}
                                     onClick={(e) => validateNewPO(e, true)}
                                 >
                                     Approve
@@ -250,7 +305,12 @@ export default function ReviewPO() {
                                     fullWidth
                                     size="small"
                                     onClick={() => setDenyOpen(true)}
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                    style={{
+                                        borderRadius: "50px",
+                                        fontSize: "18px",
+                                        fontWeight: "600",
+                                        textTransform: "none",
+                                    }}
                                 >
                                     Reject
                                 </Button>
@@ -271,17 +331,34 @@ export default function ReviewPO() {
                                     multiline // Added multiline property
                                     rows={4} // Added rows property
                                     value={denyReason}
-                                    onChange={(e) => setDenyReason(e.target.value)}
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
+                                    onChange={(e) =>
+                                        setDenyReason(e.target.value)
+                                    }
+                                    style={{
+                                        borderRadius: "50px",
+                                        fontSize: "18px",
+                                        fontWeight: "600",
+                                    }}
                                 />
                             </Box>
-                            <Box mx={2} display="flex" justifyContent="center" alignItems="center">
+                            <Box
+                                mx={2}
+                                display="flex"
+                                justifyContent="center"
+                                alignItems="center"
+                            >
                                 <Button
                                     onClick={(e) => validateNewPO(e, false)}
                                     color="primary"
                                     fullWidth
                                     size="small"
-                                    style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
+                                    style={{
+                                        borderRadius: "50px",
+                                        fontSize: "18px",
+                                        fontWeight: "600",
+                                        textTransform: "none",
+                                        width: "200px",
+                                    }}
                                 >
                                     Submit
                                 </Button>
@@ -289,7 +366,7 @@ export default function ReviewPO() {
                         </Box>
                     )}
                 </>
-            }
+            )}
         </div>
     );
-};
+}

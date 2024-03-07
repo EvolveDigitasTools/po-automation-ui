@@ -20,3 +20,12 @@ export const skuFields = [
     { label: "MSTRCTN Wght(kg)*", key: "masterCartonWeightKg" },
     { label: "MRP", key: "MRP" },
 ];
+
+export const boFields = [
+    { label: "SKU Code*", key: "skuCode" },
+    { label: "expected_qty*", key: "expectedQty" },
+    { label: "unit_cost*", key: "unitCost" },
+    { label: "GST_%*", key: "gst" },
+];
+
+export const currencyList = ["INR", "USD", "AED", "SAR", "TAKA"];
