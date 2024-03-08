@@ -1,8 +1,10 @@
-.vendor-main-container{
-    width: 80%;
-    margin: 3% auto;
+.po-records {
+    padding: 2%;
 }
 
-.agreementLabel {
-    margin: auto;
+.po-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }

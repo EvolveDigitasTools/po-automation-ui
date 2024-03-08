@@ -1,45 +1,76 @@
-import {
-    Button,
-    ButtonGroup,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    Snackbar,
-    Alert
-} from "@mui/material";
+import { Paper, IconButton } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./poRecords.css";
+import { CiCalculator2 } from "react-icons/ci";
+import { IoEye } from "react-icons/io5";
+import { MdDownloadForOffline } from "react-icons/md";
 import { DataGrid } from "@mui/x-data-grid";
+import { ArrowBack } from "@mui/icons-material";
+import { formatNumberIndianSystem } from "../../../utilities/utils";
 
 const columns = [
-    { field: 'poCode', headerName: 'PO Code', width: 150 },
-    { field: 'updatedAt', headerName: 'Last Updated At', width: 150 }
+    { field: "poCode", headerName: "PO Number", width: 100 },
+    { field: "vendorCode", headerName: "Vendor Code", width: 100 },
+    { field: "vendorName", headerName: "Name", width: 400 },
+    { field: "units", headerName: "Units", width: 100 },
+    { field: "amount", headerName: "Amount", width: 100 },
+    { field: "status", headerName: "Status", width: 100 },
+    {
+        field: "grn",
+        headerName: "Reconcile",
+        width: 100,
+        renderCell: (cellValues) => {
+            return (
+                <IconButton aria-label="Reconcile" className="po-icons">
+                    <CiCalculator2 />
+                </IconButton>
+            );
+        },
+    },
+    {
+        field: "view-po",
+        headerName: "View PO",
+        width: 100,
+        renderCell: (cellValues) => {
+            return (
+                <IconButton aria-label="View PO" className="po-icons">
+                    <IoEye />
+                </IconButton>
+            );
+        },
+    },
+    {
+        field: "download-po",
+        headerName: "Download PO",
+        width: 120,
+        renderCell: (cellValues) => {
+            return (
+                <IconButton aria-label="Download PO" className="po-icons">
+                    <MdDownloadForOffline />
+                </IconButton>
+            );
+        },
+    },
 ];
 
-const buttonStyle = {
-    textTransform: "none",
-};
-
 export default function Main() {
-    const [open, setOpen] = useState(false);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [pos, setPOS] = useState([]);
-    const [selectedRow, setSelectedRow] = useState("");
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     //ComponentDidMount
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_SERVER_URL}buying-order/approved-pos`)
+        fetch(`${process.env.REACT_APP_SERVER_URL}reconcillation/approved-pos`)
             .then((response) => response.json())
             .then((res) => {
-                setPOS(res.data.pos)
+                res.data.pos.map(
+                    (record) =>
+                        (record.amount = formatNumberIndianSystem(
+                            record.amount
+                        ))
+                );
+                res.data.pos.map((record) => (record.grn = "Upload GRN"));
+                setPOS(res.data.pos);
             })
             .catch((error) => {
                 console.error("API error:", error);
@@ -52,66 +83,18 @@ export default function Main() {
         };
     }, []);
 
-    const handleClick = () => {
-        // Your validation or action
-        setOpen(true);
-    };
-
-    const handleClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-        setOpen(false);
-    };
-
-    function vendorRegistration() {
-        navigate("/admin/vendor-registration");
-    }
-
-    function showDetails(vendorRow) {
-        navigate(`/admin/vendor/${vendorRow}`);
-    }
-
-    function showPORecords() {
-        navigate('/admin/po-records');
-    }
-
-    function addSKUs() {
-        if (selectedRow) navigate(`/admin/new-skus/${selectedRow}`);
-        else navigate(`/admin/new-skus/new`);
-    }
-
-    function addBuyingOrder() {
-        if (selectedRow) navigate(`/admin/new-buying-order/${selectedRow}`);
-        else navigate(`/admin/new-buying-order/new`);
-    }
-
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
-
-    const changeRowSelection = (rowCode) => {
-        if (selectedRow === rowCode) setSelectedRow("");
-        else setSelectedRow(rowCode);
-    };
+    // const onRowDoubleClick = (row) => {
+    //     navigate(`/admin/po-records/${row.row.poCode}`);
+    // };
 
     return (
-        <div>
-            <ButtonGroup
-                variant="contained"
-                aria-label="outlined primary button group"
-                style={{ float: 'right', padding: '10px' }}
-            >
-                <Button onClick={handleClick} style={buttonStyle}>View PO</Button>
-                <Button onClick={handleClick} style={buttonStyle}>Download Reconcillation Sheet</Button>
-                <Button onClick={handleClick} style={buttonStyle}>Upload Reconcillation Sheet</Button>
-            </ButtonGroup>
-
+        <div class="po-records">
+            <Link to="/admin">
+                <IconButton edge="start" color="inherit" aria-label="back">
+                    <ArrowBack />
+                    Back
+                </IconButton>
+            </Link>
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                 <DataGrid
                     rows={pos}
@@ -122,18 +105,8 @@ export default function Main() {
                         },
                     }}
                     pageSizeOptions={[5, 10]}
-                    rowSelectionModel={[]}
-                    sele
                 />
             </Paper>
-            <Snackbar
-                open={open}
-                autoHideDuration={6000}
-                seve
-                onClose={handleClose}
-            >
-                <Alert severity="info">Please select one PO Record</Alert>
-            </Snackbar>
         </div>
     );
 }

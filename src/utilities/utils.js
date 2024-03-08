@@ -161,3 +161,11 @@ export const convertToIndianNumber = (num) => {
 
     return result;
 }
+
+export const formatNumberIndianSystem = (num) => {
+    return new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      style: 'decimal'
+    }).format(num);
+  }
