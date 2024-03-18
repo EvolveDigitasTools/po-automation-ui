@@ -6,8 +6,6 @@ import {
     Stack,
     FormControlLabel,
     Checkbox,
-    Fab,
-    Autocomplete,
     Container,
     Divider,
     Paper,
@@ -22,20 +20,18 @@ import {
     TableBody,
     TableCell,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 import "./VendorDetails.css";
 import { Link, useParams } from "react-router-dom";
 import jwtDecode from "jwt-decode";
 import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
-import { binaryStringToBlob, getMimeTypeFromFileName } from "../../../util";
 import Attachment from "../../attachment/Attachment";
+import { getFile } from "../../../utilities/utils";
 
 export default function VendorDetails() {
-    const [title, setTitle] = useState("")
-    const [vendorCode, setVendorCode] = useState("")
-    const [loading, setLoading] = useState(true)
-    const [isReviewDone, setReviewDone] = useState(false)
+    const [title, setTitle] = useState("");
+    const [vendorCode, setVendorCode] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [isReviewDone, setReviewDone] = useState(false);
 
     const [companyName, setCompanyName] = useState("");
     const [contactPersonName, setContactPersonName] = useState("");
@@ -64,56 +60,59 @@ export default function VendorDetails() {
     const [tradeAttachment, setTradeAttachment] = useState(null);
     const [agreementAttachment, setAgreementAttachment] = useState(null);
     const [dynamicFields, setDynamicFields] = useState([]);
-    const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState([]);
-    const [countries, setCountries] = useState([]);
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
+    const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState(
+        []
+    );
     const [checkboxChecked, setCheckboxChecked] = useState(false);
     const [denyOpen, setDenyOpen] = useState(false);
     const [denyReason, setDenyReason] = useState("");
     const [vendor, setVendor] = useState(null);
 
-
     const params = useParams();
-    const categories = ['Electronics & Mobiles', 'Appliances', 'Sports & Outdoors', 'Fashion & Apparel', 'Pet Supplies', 'Health & Welness', 'Baby Products', 'Beauty & Personal Care', 'Grocery', 'Others'];
 
     //ComponentDidMount
     useEffect(() => {
-        const getFile = async (idType, id) => {
-            try {
-                const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`
-                const fileResponse = await fetch(fileDetailsUrl);
-                const fileJson = await fileResponse.json();
-                const file = await fileJson?.data?.file
-                if (file)
-                    return new File([binaryStringToBlob(file.fileContent, getMimeTypeFromFileName(file.fileName))], file.fileName, { type: getMimeTypeFromFileName(file.fileName) });
-                return file;
-            }
-            catch {
-                return null;
-            }
-        }
         const checkAndUseValidationToken = async () => {
             const validateToken = params.validateToken;
             let vendorCode = params.vendorCode;
             if (!vendorCode && validateToken) {
                 const decodedToken = jwtDecode(validateToken);
-                vendorCode = decodedToken.vendorCode
+                vendorCode = decodedToken.vendorCode;
             }
 
             if (vendorCode) {
-                const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`
+                const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`;
                 const vendorResponse = await fetch(getVendorDetailsUrl);
                 const vendorJson = await vendorResponse.json();
                 const vendorDetails = vendorJson.data.vendor;
-                const gstAtt = await getFile('gstAttVendorId', vendorDetails.id)
-                const proofAtt = await getFile('vendorBankId', vendorDetails.vendorBank.id)
-                const agreementAtt = await getFile('agreementAttVendorId', vendorDetails.id)
-                const { isVerified, companyName, productCategory, contactPerson, gst, address, vendorBank, msme, coi, tradeMark, otherFields } = vendorDetails
-                if (isVerified && params.validateToken)
-                    setReviewDone(true)
+                const gstAtt = await getFile(
+                    "gstAttVendorId",
+                    vendorDetails.id
+                );
+                const proofAtt = await getFile(
+                    "vendorBankId",
+                    vendorDetails.vendorBank.id
+                );
+                const agreementAtt = await getFile(
+                    "agreementAttVendorId",
+                    vendorDetails.id
+                );
+                const {
+                    isVerified,
+                    companyName,
+                    productCategory,
+                    contactPerson,
+                    gst,
+                    address,
+                    vendorBank,
+                    msme,
+                    coi,
+                    tradeMark,
+                    otherFields,
+                } = vendorDetails;
+                if (isVerified && params.validateToken) setReviewDone(true);
                 else {
-                    setTitle("Verify Vendor Details")
+                    setTitle("Verify Vendor Details");
                     setCompanyName(companyName);
                     setProductCategory(productCategory);
                     setContactPersonName(contactPerson.name);
@@ -121,48 +120,64 @@ export default function VendorDetails() {
                     setContactPersonPhone(contactPerson.phoneNumber);
                     setGst(gst);
                     setGstAttachment(gstAtt);
-                    setAddressLine1(address.addressLine1)
+                    setAddressLine1(address.addressLine1);
                     if (address.addressLine2)
-                        setAddressLine2(address.addressLine2)
-                    setCountry(address.country)
-                    setState(address.state)
-                    setCity(address.city)
-                    setPostalCode(address.postalCode)
-                    setBeneficiary(vendorBank.beneficiaryName)
-                    setBankName(vendorBank.bankName)
-                    setAccountNumber(vendorBank.accountNumber)
-                    setBranch(vendorBank.branch)
-                    setIfsc(vendorBank.ifsc)
-                    setBankAttachment(proofAtt)
-                    setAgreementAttachment(agreementAtt)
-                    if (msme)
-                        setMsme(msme)
-                    let msmeAtt = await getFile('msmeAttVendorId', vendorDetails.id)
-                    setMsmeAttachment(msmeAtt)
-                    if (coi)
-                        setCoi(coi)
-                    let coiAtt = await getFile('coiAttVendorId', vendorDetails.id)
-                    setCoiAttachment(coiAtt)
-                    if (tradeMark)
-                        setTradeMark(tradeMark)
-                    let tradeMarkAtt = await getFile('tradeMarkAttVendorId', vendorDetails.id)
-                    setTradeAttachment(tradeMarkAtt)
+                        setAddressLine2(address.addressLine2);
+                    setCountry(address.country);
+                    setState(address.state);
+                    setCity(address.city);
+                    setPostalCode(address.postalCode);
+                    setBeneficiary(vendorBank.beneficiaryName);
+                    setBankName(vendorBank.bankName);
+                    setAccountNumber(vendorBank.accountNumber);
+                    setBranch(vendorBank.branch);
+                    setIfsc(vendorBank.ifsc);
+                    setBankAttachment(proofAtt);
+                    setAgreementAttachment(agreementAtt);
+                    if (msme) setMsme(msme);
+                    let msmeAtt = await getFile(
+                        "msmeAttVendorId",
+                        vendorDetails.id
+                    );
+                    setMsmeAttachment(msmeAtt);
+                    if (coi) setCoi(coi);
+                    let coiAtt = await getFile(
+                        "coiAttVendorId",
+                        vendorDetails.id
+                    );
+                    setCoiAttachment(coiAtt);
+                    if (tradeMark) setTradeMark(tradeMark);
+                    let tradeMarkAtt = await getFile(
+                        "tradeMarkAttVendorId",
+                        vendorDetails.id
+                    );
+                    setTradeAttachment(tradeMarkAtt);
                     if (otherFields && otherFields.length > 0) {
-                        let dynamicFieldsAttachs = []
+                        let dynamicFieldsAttachs = [];
                         for (let i = 0; i < otherFields.length; i++) {
                             const otherField = otherFields[i];
-                            let otherAttach = await getFile('vendorOtherId', otherField.id)
-                            dynamicFieldsAttachs.push(otherAttach)
+                            let otherAttach = await getFile(
+                                "vendorOtherId",
+                                otherField.id
+                            );
+                            dynamicFieldsAttachs.push(otherAttach);
                         }
-                        setDynamicFieldsAttachments(dynamicFieldsAttachs)
-                        setDynamicFields(otherFields.map(otherField => { return { "key": otherField.otherKey, "value": otherField.otherValue } }))
+                        setDynamicFieldsAttachments(dynamicFieldsAttachs);
+                        setDynamicFields(
+                            otherFields.map((otherField) => {
+                                return {
+                                    key: otherField.otherKey,
+                                    value: otherField.otherValue,
+                                };
+                            })
+                        );
                     }
-                    setVendor(vendorDetails)
+                    setVendor(vendorDetails);
                 }
-                setVendorCode(vendorCode)
+                setVendorCode(vendorCode);
             }
-            setLoading(false)
-        }
+            setLoading(false);
+        };
 
         checkAndUseValidationToken();
 
@@ -170,84 +185,35 @@ export default function VendorDetails() {
             // This code will run when the component is unmounted
             // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
         };
-    }, []);
+    }, [params]);
 
     const validateNewVendor = async (e, isRecordValid) => {
-        e.preventDefault()
-        setLoading(true)
+        e.preventDefault();
+        setLoading(true);
         const formData = new FormData();
         formData.append("vendorCode", vendorCode);
         formData.append("isValid", isRecordValid);
-        if (!isRecordValid)
-            formData.append("reason", denyReason);
+        if (!isRecordValid) formData.append("reason", denyReason);
 
-        const validateVendorUrl = `${process.env.REACT_APP_SERVER_URL}vendor/validate`
+        const validateVendorUrl = `${process.env.REACT_APP_SERVER_URL}vendor/validate`;
         const validationResponse = await fetch(validateVendorUrl, {
             method: "POST",
-            body: formData
+            body: formData,
         });
         const vendorJson = await validationResponse.json();
         if (vendorJson.success) {
-            setReviewDone(true)
-            setLoading(false)
-        }
-    }
-
-    const onCountryChange = (e, newValue) => { };
-
-    const onStateChange = (e, newValue) => { };
-
-    const handleSubmit = (e) => { };
-
-    const handleFieldChange = (e, index, fieldToUpdate) => {
-        const newFields = [...dynamicFields];
-        const newFieldsAttachs = [...dynamicFieldsAttachments];
-        if (fieldToUpdate == "attachment") {
-            newFieldsAttachs[index] = e.target.files[0];
-            setDynamicFieldsAttachments(newFieldsAttachs);
-        } else {
-            newFields[index][fieldToUpdate] = e.target.value;
-            setDynamicFields(newFields);
+            setReviewDone(true);
+            setLoading(false);
         }
     };
-
-    const addNewField = () => {
-        setDynamicFields([...dynamicFields, { key: "", value: "" }]);
-        setDynamicFieldsAttachments([...dynamicFieldsAttachments, null]);
-    };
-
-    const handleRemoveField = (index) => {
-        const newFields = dynamicFields.filter((_, i) => i !== index);
-        const newFieldsAttachs = dynamicFieldsAttachments.filter(
-            (_, i) => i !== index
-        );
-        setDynamicFields(newFields);
-        setDynamicFieldsAttachments(newFieldsAttachs);
-    };
-
-    const downloadAttachment = async (e, fileType) => {
-        e.preventDefault();
-        let attachment
-        if (fileType == "gstAtt")
-            attachment = gstAttachment
-        else if (fileType == "bankAtt")
-            attachment = bankAttachment
-        else if (fileType == "agreementAtt")
-            attachment = agreementAttachment
-        // Convert buffer to Blob
-
-        const blob = new Blob([new Uint8Array(attachment.fileContent.data)], { type: getMimeTypeFromFileName(attachment.fileName) });
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-
-        // Clean up by revoking the Blob URL
-        URL.revokeObjectURL(url);
-    }
 
     if (loading)
         return (
             <Container maxWidth="sm" style={{ marginTop: "2rem" }}>
-                <Paper elevation={3} style={{ padding: "2rem", textAlign: "center" }}>
+                <Paper
+                    elevation={3}
+                    style={{ padding: "2rem", textAlign: "center" }}
+                >
                     <CircularProgress />
                     <Typography variant="h4" gutterBottom>
                         Loading...
@@ -269,7 +235,8 @@ export default function VendorDetails() {
                         Submission Successful
                     </Typography>
                     <Typography variant="body1">
-                        Your review is done. Details are mailed to creator of vendor
+                        Your review is done. Details are mailed to creator of
+                        vendor
                     </Typography>
                 </Paper>
             </Container>
@@ -277,24 +244,30 @@ export default function VendorDetails() {
     else
         return (
             <div className="vendor-main-container">
-                {params.vendorCode && <Link to="/admin">
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="back"
-                    >
-                        <ArrowBack />Back
-                    </IconButton>
-                </Link>}
+                {params.vendorCode && (
+                    <Link to="/admin">
+                        <IconButton
+                            edge="start"
+                            color="inherit"
+                            aria-label="back"
+                        >
+                            <ArrowBack />
+                            Back
+                        </IconButton>
+                    </Link>
+                )}
                 <h1>{title}</h1>
-                <Stack component="form" onSubmit={handleSubmit}>
-                    <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                <Stack component="form">
+                    <Grid
+                        container
+                        rowSpacing={1}
+                        columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                    >
                         <Grid item xs={12}>
                             <h2>Company Details</h2>
                         </Grid>
                         <Grid item xs={12}>
                             <TextField
-                                required
                                 InputProps={{
                                     readOnly: true,
                                 }}
@@ -303,33 +276,18 @@ export default function VendorDetails() {
                                 value={companyName}
                                 fullWidth
                                 size="small"
-                                onChange={(e) => setCompanyName(e.target.value)}
                             />
                         </Grid>
                         <Grid item xs={6}>
-                            <Autocomplete
-                                disablePortal
+                            <TextField
                                 id="category"
                                 InputProps={{
                                     readOnly: true,
                                 }}
-                                options={categories}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        {...params}
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password",
-                                            style: { width: "auto" },
-                                        }}
-                                        label="Category"
-                                    />
-                                )}
+                                label="Category"
                                 fullWidth
                                 size="small"
                                 value={productCategory}
-                                onChange={(e, newValue) => setProductCategory(newValue)}
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -343,7 +301,9 @@ export default function VendorDetails() {
                                 fullWidth
                                 size="small"
                                 value={contactPersonName}
-                                onChange={(e) => setContactPersonName(e.target.value)}
+                                onChange={(e) =>
+                                    setContactPersonName(e.target.value)
+                                }
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -358,7 +318,9 @@ export default function VendorDetails() {
                                 fullWidth
                                 size="small"
                                 value={contactPersonEmail}
-                                onChange={(e) => setContactPersonEmail(e.target.value)}
+                                onChange={(e) =>
+                                    setContactPersonEmail(e.target.value)
+                                }
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -372,7 +334,9 @@ export default function VendorDetails() {
                                 fullWidth
                                 size="small"
                                 value={contactPersonPhone}
-                                onChange={(e) => setContactPersonPhone(e.target.value)}
+                                onChange={(e) =>
+                                    setContactPersonPhone(e.target.value)
+                                }
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -409,10 +373,12 @@ export default function VendorDetails() {
                                 id="address-line-1"
                                 label="Address Line 1"
                                 value={addressLine1}
-                                onChange={(e) => setAddressLine1(e.target.value)}
+                                onChange={(e) =>
+                                    setAddressLine1(e.target.value)
+                                }
                             />
                         </Grid>
-                        {addressLine2 &&
+                        {addressLine2 && (
                             <Grid item xs={12}>
                                 <TextField
                                     InputProps={{
@@ -423,108 +389,43 @@ export default function VendorDetails() {
                                     fullWidth
                                     size="small"
                                     value={addressLine2}
-                                    onChange={(e) => setAddressLine2(e.target.value)}
                                 />
                             </Grid>
-                        }
+                        )}
                         <Grid item xs={6}>
-                            <Autocomplete
+                            <TextField
                                 id="country"
                                 InputProps={{
                                     readOnly: true,
                                 }}
-                                options={countries}
-                                autoHighlight
+                                label="Country"
                                 fullWidth
                                 size="small"
-                                renderOption={(props, option) => (
-                                    <Box
-                                        component="li"
-                                        sx={{
-                                            "& > img": { mr: 2, flexShrink: 0 },
-                                        }}
-                                        {...props}
-                                    >
-                                        <img
-                                            loading="lazy"
-                                            width="20"
-                                            src={`https://flagcdn.com/w20/${option.country_short_name.toLowerCase()}.png`}
-                                            srcSet={`https://flagcdn.com/w40/${option.country_short_name.toLowerCase()}.png 2x`}
-                                            alt=""
-                                        />
-                                        {option.country_name} (
-                                        {option.country_short_name})
-                                    </Box>
-                                )}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        InputProps={{
-                                            readOnly: true,
-                                        }}
-                                        {...params}
-                                        label="Choose a country"
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password", // disable autocomplete and autofill
-                                            style: { width: "auto" },
-                                        }}
-                                    />
-                                )}
                                 value={country}
-                                onChange={onCountryChange}
                             />
                         </Grid>
                         <Grid item xs={6}>
-                            <Autocomplete
-                                disablePortal
+                            <TextField
                                 InputProps={{
                                     readOnly: true,
                                 }}
                                 id="state"
-                                options={states}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        {...params}
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password",
-                                            style: { width: "auto" },
-                                        }}
-                                        label="State"
-                                    />
-                                )}
+                                label="State"
                                 fullWidth
                                 size="small"
                                 value={state}
-                                onChange={onStateChange}
                             />
                         </Grid>
                         <Grid item xs={6}>
-                            <Autocomplete
-                                disablePortal
+                            <TextField
                                 id="city"
                                 InputProps={{
                                     readOnly: true,
                                 }}
-                                options={cities}
-                                renderInput={(params) => (
-                                    <TextField
-                                        required
-                                        {...params}
-                                        inputProps={{
-                                            ...params.inputProps,
-                                            autoComplete: "new-password",
-                                            style: { width: "auto" },
-                                        }}
-                                        label="City"
-                                    />
-                                )}
+                                label="City"
                                 fullWidth
                                 size="small"
                                 value={city}
-                                onChange={(e, newValue) => setCity(newValue)}
                             />
                         </Grid>
                         <Grid item xs={6}>
@@ -625,7 +526,7 @@ export default function VendorDetails() {
                         <Grid item xs={12}>
                             <h2>Other Details</h2>
                         </Grid>
-                        {(msme || msmeAttachment) &&
+                        {(msme || msmeAttachment) && (
                             <Grid item xs={6}>
                                 <TextField
                                     id="msme"
@@ -639,16 +540,16 @@ export default function VendorDetails() {
                                     onChange={(e) => setMsme(e.target.value)}
                                 />
                             </Grid>
-                        }
-                        {(msme || msmeAttachment) &&
+                        )}
+                        {(msme || msmeAttachment) && (
                             <Grid item xs={6}>
                                 <Attachment
                                     label="MSME Attachment"
                                     file={msmeAttachment}
                                 />
                             </Grid>
-                        }
-                        {(coi || coiAttachment) &&
+                        )}
+                        {(coi || coiAttachment) && (
                             <Grid item xs={6}>
                                 <TextField
                                     id="coi"
@@ -662,16 +563,16 @@ export default function VendorDetails() {
                                     onChange={(e) => setCoi(e.target.value)}
                                 />
                             </Grid>
-                        }
-                        {(coi || coiAttachment) &&
+                        )}
+                        {(coi || coiAttachment) && (
                             <Grid item xs={6}>
                                 <Attachment
                                     label="COI Attachment"
                                     file={coiAttachment}
                                 />
                             </Grid>
-                        }
-                        {(tradeMark || tradeAttachment) &&
+                        )}
+                        {(tradeMark || tradeAttachment) && (
                             <Grid item xs={6}>
                                 <TextField
                                     id="trade-mark"
@@ -682,20 +583,24 @@ export default function VendorDetails() {
                                     value={tradeMark}
                                     fullWidth
                                     size="small"
-                                    onChange={(e) => setTradeMark(e.target.value)}
+                                    onChange={(e) =>
+                                        setTradeMark(e.target.value)
+                                    }
                                 />
                             </Grid>
-                        }
-                        {(tradeMark || tradeAttachment) &&
+                        )}
+                        {(tradeMark || tradeAttachment) && (
                             <Grid item xs={6}>
                                 <Attachment
                                     label="Trade Mark Attachment"
                                     file={tradeAttachment}
                                 />
                             </Grid>
-                        }
+                        )}
                         <Grid className="agreementLabel" item xs={6}>
-                            <h4>Signed and Stamped Agreement by Both Parties</h4>
+                            <h4>
+                                Signed and Stamped Agreement by Both Parties
+                            </h4>
                         </Grid>
                         <Grid item xs={6}>
                             <Attachment
@@ -724,78 +629,96 @@ export default function VendorDetails() {
                                 </Grid>
                             </>
                         ))}
-                        {params.vendorCode && vendor?.skus.length > 0 && <Grid item xs={12}>
-                            <h2>SKUs</h2>
-                        </Grid>}
-                        {params.vendorCode && vendor?.skus.length > 0 && <Grid item xs={12}>
-                            <TableContainer component={Paper}>
-                                <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
-                                    <TableHead>
-                                        <TableRow>
-                                            {Object.keys(vendor.skus[0]).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {vendor.skus.map((row, i) => (
-                                            <TableRow
-                                                key={i}
-                                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                            >
-                                                {Object.values(row).map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
+                        {params.vendorCode && vendor?.skus.length > 0 && (
+                            <Grid item xs={12}>
+                                <h2>SKUs</h2>
+                            </Grid>
+                        )}
+                        {params.vendorCode && vendor?.skus.length > 0 && (
+                            <Grid item xs={12}>
+                                <TableContainer component={Paper}>
+                                    <Table
+                                        style={{ tableLayout: "auto" }}
+                                        size="small"
+                                        aria-label="a dense table"
+                                    >
+                                        <TableHead>
+                                            <TableRow>
+                                                {Object.keys(
+                                                    vendor.skus[0]
+                                                ).map((tableHead, i) => (
+                                                    <TableCell key={i}>
+                                                        {tableHead}
+                                                    </TableCell>
+                                                ))}
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Grid>}
-                        {params.vendorCode && vendor?.buyingOrders.length > 0 && <Grid item xs={12}>
-                            <h2>POs</h2>
-                        </Grid>}
-                        {params.vendorCode && vendor?.buyingOrders.length > 0 && <Grid item xs={12}>
-                            <TableContainer component={Paper}>
-                                <Table style={{ tableLayout: 'auto' }} size="small" aria-label="a dense table">
-                                    <TableHead>
-                                        <TableRow>
-                                            {Object.keys(vendor.buyingOrders[0]).map((tableHead, i) => <TableCell key={i}>{tableHead}</TableCell>)}
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {vendor.skus.map((row, i) => (
-                                            <TableRow
-                                                key={i}
-                                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                            >
-                                                {Object.values(row).map((value, i) => <TableCell style={{ whiteSpace: "nowrap" }} key={i}>{value}</TableCell>)}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Grid>}
+                                        </TableHead>
+                                        <TableBody>
+                                            {vendor.skus.map((row, i) => (
+                                                <TableRow
+                                                    key={i}
+                                                    sx={{
+                                                        "&:last-child td, &:last-child th":
+                                                            { border: 0 },
+                                                    }}
+                                                >
+                                                    {Object.values(row).map(
+                                                        (value, i) => (
+                                                            <TableCell
+                                                                style={{
+                                                                    whiteSpace:
+                                                                        "nowrap",
+                                                                }}
+                                                                key={i}
+                                                            >
+                                                                {value}
+                                                            </TableCell>
+                                                        )
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Grid>
+                        )}
                     </Grid>
                     <br />
                     <Divider />
-                    {params.validateToken &&
+                    {params.validateToken && (
                         <>
                             <FormControlLabel
                                 control={
                                     <Checkbox
                                         color="primary"
-                                        onChange={(e) => setCheckboxChecked(e.target.checked)}
+                                        onChange={(e) =>
+                                            setCheckboxChecked(e.target.checked)
+                                        }
                                     />
                                 }
                                 label="I confirm that I have reviewed and verified all the details and documents in this form"
                             />
                             {checkboxChecked && (
-                                <Box mt={5} display="flex" justifyContent="center">
+                                <Box
+                                    mt={5}
+                                    display="flex"
+                                    justifyContent="center"
+                                >
                                     <Box mx={2}>
                                         <Button
                                             variant="contained"
                                             color="primary"
                                             fullWidth
                                             size="small"
-                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
-                                            onClick={(e) => validateNewVendor(e, true)}
+                                            style={{
+                                                borderRadius: "50px",
+                                                fontSize: "18px",
+                                                fontWeight: "600",
+                                                textTransform: "none",
+                                            }}
+                                            onClick={(e) =>
+                                                validateNewVendor(e, true)
+                                            }
                                         >
                                             Approve
                                         </Button>
@@ -807,7 +730,12 @@ export default function VendorDetails() {
                                             fullWidth
                                             size="small"
                                             onClick={() => setDenyOpen(true)}
-                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none' }}
+                                            style={{
+                                                borderRadius: "50px",
+                                                fontSize: "18px",
+                                                fontWeight: "600",
+                                                textTransform: "none",
+                                            }}
                                         >
                                             Reject
                                         </Button>
@@ -815,7 +743,11 @@ export default function VendorDetails() {
                                 </Box>
                             )}
                             {denyOpen && checkboxChecked && (
-                                <Box mt={5} display="flex" justifyContent="center">
+                                <Box
+                                    mt={5}
+                                    display="flex"
+                                    justifyContent="center"
+                                >
                                     <Box mx={2} width="75%">
                                         <TextField
                                             autoFocus
@@ -828,17 +760,36 @@ export default function VendorDetails() {
                                             multiline // Added multiline property
                                             rows={4} // Added rows property
                                             value={denyReason}
-                                            onChange={(e) => setDenyReason(e.target.value)}
-                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600' }}
+                                            onChange={(e) =>
+                                                setDenyReason(e.target.value)
+                                            }
+                                            style={{
+                                                borderRadius: "50px",
+                                                fontSize: "18px",
+                                                fontWeight: "600",
+                                            }}
                                         />
                                     </Box>
-                                    <Box mx={2} display="flex" justifyContent="center" alignItems="center">
+                                    <Box
+                                        mx={2}
+                                        display="flex"
+                                        justifyContent="center"
+                                        alignItems="center"
+                                    >
                                         <Button
-                                            onClick={(e) => validateNewVendor(e, false)}
+                                            onClick={(e) =>
+                                                validateNewVendor(e, false)
+                                            }
                                             color="primary"
                                             fullWidth
                                             size="small"
-                                            style={{ borderRadius: '50px', fontSize: '18px', fontWeight: '600', textTransform: 'none', width: '200px' }}
+                                            style={{
+                                                borderRadius: "50px",
+                                                fontSize: "18px",
+                                                fontWeight: "600",
+                                                textTransform: "none",
+                                                width: "200px",
+                                            }}
                                         >
                                             Submit
                                         </Button>
@@ -846,7 +797,7 @@ export default function VendorDetails() {
                                 </Box>
                             )}
                         </>
-                    }
+                    )}
                 </Stack>
             </div>
         );

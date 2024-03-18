@@ -17,6 +17,7 @@ import VerifySKUs from "./components/main/verifySKUs/verifySKUs";
 import ReviewPO from "./components/main/reviewPO/ReviewPO";
 import PORecords from "./components/main/poRecords/poRecords";
 import Success from "./components/validate/Success";
+import Reconcillation from "./components/main/reconcillation/reconcillation";
 
 const getUserData = () =>
     new Promise((resolve) =>
@@ -61,6 +62,7 @@ export const router = createBrowserRouter(
                             element={<VendorRegistration />}
                         />
                         <Route path="po-records" element={<PORecords />} />
+                        <Route path="po-records/:poCode" element={<Reconcillation />} />
                         <Route
                             path="new-skus/:vendorCode"
                             element={<AddSKUs />}

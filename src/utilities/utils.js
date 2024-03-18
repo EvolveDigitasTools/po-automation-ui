@@ -1,3 +1,5 @@
+import { binaryStringToBlob, getMimeTypeFromFileName } from "../util";
+
 export const openInBrowserTypes = [
     // Images
     "image/jpeg",
@@ -54,9 +56,9 @@ export const openInBrowserExtensions = [
 ];
 
 export const labelToKey = (label, fieldsData) => {
-    const field = fieldsData.find(field => field.label === label);
+    const field = fieldsData.find((field) => field.label === label);
     return field ? field.key : null;
-  };
+};
 export const convertToIndianNumber = (num) => {
     // Arrays for Indian numbering system
     const ones = [
@@ -160,12 +162,39 @@ export const convertToIndianNumber = (num) => {
     }
 
     return result;
-}
+};
 
 export const formatNumberIndianSystem = (num) => {
-    return new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      style: 'decimal'
+    return new Intl.NumberFormat("en-IN", {
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 2,
+        style: "decimal",
     }).format(num);
-  }
+};
+
+export const isDecimal = (num) => {
+    return !!(num % 1);
+};
+
+export const getFile = async (idType, id) => {
+    try {
+        const fileDetailsUrl = `${process.env.REACT_APP_SERVER_URL}file/${idType}/${id}`;
+        const fileResponse = await fetch(fileDetailsUrl);
+        const fileJson = await fileResponse.json();
+        const file = await fileJson?.data?.file;
+        if (file)
+            return new File(
+                [
+                    binaryStringToBlob(
+                        file.fileContent,
+                        getMimeTypeFromFileName(file.fileName)
+                    ),
+                ],
+                file.fileName,
+                { type: getMimeTypeFromFileName(file.fileName) }
+            );
+        return file;
+    } catch {
+        return null;
+    }
+};

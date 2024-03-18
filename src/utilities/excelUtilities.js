@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { boFields, skuFields } from "./pofields";
+import { boFields, reconcillationFields, skuFields } from "./pofields";
 import { convertToIndianNumber } from "./utils";
 
 export const skuSheetDownload = async () => {
@@ -76,7 +76,65 @@ export const boSheetDownload = async () => {
     URL.revokeObjectURL(url);
 };
 
-export const getPOBuffer = async (records, vendor, poCode, currency, paymentTerms, buyerEmail, estimatedDeliveryDate) => {
+export const reconcillationSheetDownload = async (records) => {
+    // Sample data for the Excel file
+
+    const data = [reconcillationFields.map((obj) => obj.label)];
+
+    console.log(data);
+
+    records.forEach((record, recordI) => {
+        const recordData = [];
+        reconcillationFields.forEach((field, i) => {
+            let value = "";
+            if (field.formula === "index") value = recordI + 1;
+            else if (field.formula?.startsWith("="))
+                value = { formula: field.formula.replace(/\$/g, recordI + 2) };
+            else value = record[field.key] ? record[field.key] : null;
+            recordData.push(value);
+        });
+        data.push(recordData);
+    });
+
+    // Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Reconcillation Sheet");
+
+    // Populate the worksheet with data
+    data.forEach((row) => {
+        worksheet.addRow(row);
+    });
+    data.forEach((row) => {
+        row.forEach((title, columnIndex) => {
+            const column = worksheet.getColumn(columnIndex + 1);
+            let maxTitleLength = (title + "").length + 2;
+            column.width = Math.max(column.width ?? 0, maxTitleLength);
+        });
+    });
+
+    // Generate a Blob from the workbook
+    const blob = await workbook.xlsx.writeBuffer();
+
+    // Create a URL for the Blob and create a temporary anchor element to trigger download
+    const url = URL.createObjectURL(new Blob([blob]));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "reconcillation.xlsx";
+    a.click();
+
+    // Clean up by revoking the Blob URL
+    URL.revokeObjectURL(url);
+};
+
+export const getPOBuffer = async (
+    records,
+    vendor,
+    poCode,
+    currency,
+    paymentTerms,
+    buyerEmail,
+    estimatedDeliveryDate
+) => {
     const currentDate = new Date();
     const year = currentDate.getFullYear();
     const month = String(currentDate.getMonth() + 1).padStart(2, "0");
@@ -772,7 +830,9 @@ export const getPOBuffer = async (records, vendor, poCode, currency, paymentTerm
                 },
                 font: {
                     bold:
-                        cell.col === 2 || cell.row === endCell.row ? true : false,
+                        cell.col === 2 || cell.row === endCell.row
+                            ? true
+                            : false,
                 },
                 border: {
                     top: { style: "thin" },

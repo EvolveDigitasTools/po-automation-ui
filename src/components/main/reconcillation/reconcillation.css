@@ -1,0 +1,28 @@
+.reconcillation{
+    padding: 40px;
+}
+.reconcillation .row .col{
+    max-width: 50%;
+    width: 50%;
+    padding-top: 10px;
+    display: block;
+}
+.reconcillation .row .col:nth-child(2){
+   margin-left: 10px;
+}
+.back-button{
+    
+  
+    padding: 10px;
+}
+.reconcillation .row{
+    display: flex;
+}
+
+.file-input{
+    width: 100%;
+}
+.download-button{
+    padding: 19px;
+    width: 100%;
+}

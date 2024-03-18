@@ -33,3 +33,19 @@ export function binaryStringToBlob(binaryString, mimeType) {
   // Step 3: Create a Blob from the Uint8Array.
   return new Blob([byteArray], { type: mimeType });
 }
+
+export const updateFile = async (idType, attachment, idName, idValue) => {
+  const formData = new FormData();
+  formData.append("attachment", attachment);
+  formData.append("idName", idName);
+  formData.append("idValue", idValue);
+  const response = await fetch(
+      `${process.env.REACT_APP_SERVER_URL}file/${idType}`,
+      {
+          method: "PUT",
+          body: formData,
+      }
+  );
+  const responseData = await response.json();
+  return responseData.data.fileId;
+};
