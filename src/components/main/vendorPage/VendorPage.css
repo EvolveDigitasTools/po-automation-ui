@@ -1,0 +1,7 @@
+.label {
+    margin: auto;
+    margin-left: 0;
+}
+.label_parent {
+    display: flex;
+}

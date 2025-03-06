@@ -16,6 +16,8 @@ export default function Attachment({
     fileType,
 }) {
     const [blobUrl, setBlobUrl] = useState(null);
+    const [helperTest, setHelperText] = useState("");
+    const [isError, setError] = useState(false);
 
     useEffect(() => {
         // This could be a Blob URL created and stored in state when the component mounts or in response to certain events
@@ -36,7 +38,17 @@ export default function Attachment({
 
         input.onchange = (e) => {
             const selectedFile = e.target.files[0];
-            updateFile(selectedFile);
+            if (selectedFile && updateFile) {
+                const fileSizeInMB = selectedFile.size / (1024 * 1024);
+                if (fileSizeInMB > 10) {
+                    setHelperText("Max file size limit is 10mb");
+                    setError(true);
+                } else {
+                    updateFile(selectedFile);
+                    setHelperText("");
+                    setError(false);
+                }
+            }
         };
 
         input.click();
@@ -91,7 +103,8 @@ export default function Attachment({
             value={file?.name ? file.name : ""}
             fullWidth
             size="small"
-            error={required && submit ? (file ? false : true) : false}
+            error={(required && submit ? (file ? false : true) : false) || isError}
+            helperText={helperTest}
         />
     );
 }

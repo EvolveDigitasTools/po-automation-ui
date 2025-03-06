@@ -18,6 +18,7 @@ import ReviewPO from "./components/main/reviewPO/ReviewPO";
 import PORecords from "./components/main/poRecords/poRecords";
 import Success from "./components/validate/Success";
 import Reconcillation from "./components/main/reconcillation/reconcillation";
+import VendorPage from "./components/main/vendorPage/VendorPage";
 
 const getUserData = () =>
     new Promise((resolve) =>
@@ -31,7 +32,7 @@ export const router = createBrowserRouter(
     createRoutesFromElements(
         <>
             <Route element={<HomeLayout />}>
-                <Route path="/" element={<VendorRegistration />} />
+                <Route path="/" element={<VendorPage />} />
                 <Route path="/success" element={<Success />} />
                 <Route
                     path="/review-vendor/:validateToken"
