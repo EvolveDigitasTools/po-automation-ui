@@ -17,8 +17,6 @@ import "./Main.css";
 const columns = [
     { id: "vendorCode", label: "Vendor Code", minWidth: 170 },
     { id: "companyName", label: "Company Name", minWidth: 170 },
-    { id: "state", label: "State", minWidth: 170 },
-    { id: "country", label: "Country", minWidth: 170 },
     { id: "productCategory", label: "Product Category", minWidth: 170 },
     // { id: "beneficiary", label: "Beneficiary Name", minWidth: 170 },
     // { id: "accountNumber", label: "Account Number", minWidth: 170 },
@@ -44,7 +42,7 @@ export default function Main() {
 
     //ComponentDidMount
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
+        fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/all`)
             .then((response) => response.json())
             .then((res) => {
                 setVendors(res.data.vendors);
@@ -116,7 +114,7 @@ export default function Main() {
                 </Button>
             </ButtonGroup>
 
-            <Paper sx={{ width: "100%", overflow: "hidden" }}>
+            <Paper sx={{ width: "94%", overflow: "hidden", margin: "3%" }}>
                 <TableContainer sx={{ maxHeight: 440 }}>
                     <Table stickyHeader aria-label="sticky table">
                         <TableHead>
