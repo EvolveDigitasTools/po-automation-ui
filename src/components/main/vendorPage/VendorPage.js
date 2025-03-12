@@ -25,7 +25,7 @@ const configDetails = {
         "verify-vendor": "Verify Vendor Details",
     },
 };
-const CHUNK_SIZE = 2*1024*1024;
+const CHUNK_SIZE = 2 * 1024 * 1024;
 
 const companyCategories = [
     "Electronics & Mobiles",
@@ -327,10 +327,11 @@ export default function VendorPage() {
             setVendorSubmitLoading(false);
             return;
         }
-        setVendorSubmitLoading(false); //temp
         const vendorRelatedIds = await createVendor();
         if (vendorRelatedIds) {
-            await uploadVendorAttachments(vendorRelatedIds)
+            const res = await uploadVendorAttachments(vendorRelatedIds)
+            setVendorSubmitLoading(false);
+            setProcessStage("success");
         } else {
             setVendorSubmitLoading(false);
         }
@@ -382,78 +383,90 @@ export default function VendorPage() {
     };
 
     const uploadVendorAttachments = async (vendorRelatedIds) => {
-        vendorFields.filter(vendorField => vendorField.fieldType === "attachment").forEach(async (vendorField) => {
-            if (vendorData[vendorField.id]) {
-                const attachmentBody = {
-                    file: vendorData[vendorField.id],
-                    attachmentType: vendorField.attachmentType,
-                    entityName: vendorField.entityName,
-                    entityId: vendorRelatedIds[convertEntityNameToId(vendorField.entityName)]
+        try {
+            for (let vendorField of vendorFields) {
+                if (vendorField.fieldType === "attachment" && vendorData[vendorField.id]) {
+                    const attachmentBody = {
+                        file: vendorData[vendorField.id],
+                        attachmentType: vendorField.attachmentType,
+                        entityName: vendorField.entityName,
+                        entityId: vendorRelatedIds[convertEntityNameToId(vendorField.entityName)]
+                    }
+                    const res = await uploadAttachment(attachmentBody);
+                    if(!res) return false;
                 }
-                await uploadAttachment(attachmentBody);
             }
-        });
 
-        dynamicFieldsAttachments.forEach(async (dynamicFieldAttachment, i) => {
-            if (dynamicFieldAttachment) {
-                const attachmentBody = {
-                    file: dynamicFieldAttachment,
-                    attachmentType: 'otherField',
-                    entityName: 'VendorOther',
-                    entityId: vendorRelatedIds['otherFields'].find(otherField => otherField.key === dynamicFields[i].key).id
+            for (let i = 0; i < dynamicFieldsAttachments.length; i++) {
+                const dynamicFieldAttachment = dynamicFieldsAttachments[i];
+                if (dynamicFieldAttachment) {
+                    const attachmentBody = {
+                        file: dynamicFieldAttachment,
+                        attachmentType: 'otherField',
+                        entityName: 'VendorOther',
+                        entityId: vendorRelatedIds['otherFields'].find(otherField => otherField.key === dynamicFields[i].key).id
+                    }
+                    const res = await uploadAttachment(attachmentBody);
+                    if(!res) return false;
                 }
-                await uploadAttachment(attachmentBody);
             }
-        });
+
+            return true;
+        } catch (error) {
+            console.error("Error uploading attachments:", error);
+            return false;
+        }
     };
 
     const uploadAttachment = async (attachmentBody) => {
-        const totalChunks = Math.ceil(attachmentBody.file.size / CHUNK_SIZE);
-        const formData = new FormData();
-        formData.append("name", attachmentBody.file.name);
-        formData.append("mimeType", attachmentBody.file.type);
-        formData.append("totalSizeInBytes", attachmentBody.file.size);
-        formData.append("totalChunks", totalChunks)
-        formData.append("attachmentType", attachmentBody.attachmentType);
-        formData.append("entityName", attachmentBody.entityName);
-        formData.append("entityId", attachmentBody.entityId);
-        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/attachment/init`, {
-            method: "POST",
-            body: formData,
-        });
-        const jsonResponse = await response.json();
-        if (!jsonResponse.success) {
-            alert(jsonResponse.message + "/nPlease contact the admin and you can take this screenshot to share with team");
-        }
-        const attachmentId = jsonResponse.data.attachmentId;
-        const uploadPromises = [];
-        for (let i = 0; i < totalChunks; i++) {
-            const chunk = attachmentBody.file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-            const formData = new FormData();
-            formData.append('attachmentId', attachmentId);
-            formData.append('chunkIndex', i);
-            formData.append('file', chunk);
-
-            // Create a promise for the current chunk upload
-            const promise = fetch(`${process.env.REACT_APP_SERVER_URL}/attachment/uploadChunk`, {
-                method: 'POST',
-                body: formData,
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`Chunk ${i} failed to upload`);
-                }
-                return response.json();
-            });
-
-            uploadPromises.push(promise);
-        }
-
-        // Run all uploads in parallel
         try {
+            const totalChunks = Math.ceil(attachmentBody.file.size / CHUNK_SIZE);
+            const formData = new FormData();
+            formData.append("name", attachmentBody.file.name);
+            formData.append("mimeType", attachmentBody.file.type);
+            formData.append("totalSizeInBytes", attachmentBody.file.size);
+            formData.append("totalChunks", totalChunks)
+            formData.append("attachmentType", attachmentBody.attachmentType);
+            formData.append("entityName", attachmentBody.entityName);
+            formData.append("entityId", attachmentBody.entityId);
+            const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/attachment/init`, {
+                method: "POST",
+                body: formData,
+            });
+            const jsonResponse = await response.json();
+            if (!jsonResponse.success) {
+                alert(jsonResponse.message + "/nPlease contact the admin and you can take this screenshot to share with team");
+            }
+            const attachmentId = jsonResponse.data.attachmentId;
+            const uploadPromises = [];
+            for (let i = 0; i < totalChunks; i++) {
+                const chunk = attachmentBody.file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                const formData = new FormData();
+                formData.append('attachmentId', attachmentId);
+                formData.append('chunkIndex', i);
+                formData.append('file', chunk);
+
+                // Create a promise for the current chunk upload
+                const promise = fetch(`${process.env.REACT_APP_SERVER_URL}/attachment/uploadChunk`, {
+                    method: 'POST',
+                    body: formData,
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Chunk ${i} failed to upload`);
+                    }
+                    return response.json();
+                });
+
+                uploadPromises.push(promise);
+            }
+
+            // Run all uploads in parallel
+
             await Promise.all(uploadPromises);
-            console.log("All chunks uploaded successfully");
+            return true;
         } catch (error) {
             console.error("Error uploading one or more chunks:", error);
+            return false;
         }
     }
 
