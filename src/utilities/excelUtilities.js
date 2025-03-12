@@ -5,7 +5,7 @@ import { convertToIndianNumber } from "./utils";
 export const skuSheetDownload = async () => {
     // Sample data for the Excel file
     const data = [
-        skuFields.map((obj) => obj.label),
+        skuFields.map((obj) => obj.required ? obj.label + "*" : obj.label),
         // Add more data here
     ];
 
@@ -23,7 +23,7 @@ export const skuSheetDownload = async () => {
         let maxTitleLength = title.length;
 
         // Set the column width based on the maximum title length
-        column.width = maxTitleLength + 2; // You can adjust the additional width as needed
+        column.width = Math.max(9, maxTitleLength + 2); 
     });
 
     // Generate a Blob from the workbook
