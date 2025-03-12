@@ -22,7 +22,7 @@ import "./AddSku.css";
 import { ArrowBack, CheckCircleOutline } from "@mui/icons-material";
 import Attachment from "../../attachment/Attachment";
 import { skuSheetDownload } from "../../../utilities/excelUtilities";
-import { labelToKey } from "../../../utilities/utils";
+import { convertToNumber, labelToKey } from "../../../utilities/utils";
 import { skuFields } from "../../../utilities/pofields";
 import { LoadingButton } from "@mui/lab";
 
@@ -40,7 +40,7 @@ export default function AddSKUs() {
     const [createdBy, setCreatedBy] = useState("");
 
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
+        fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/all`)
             .then((response) => response.json())
             .then((res) => {
                 let vendor = res.data.vendors.find(
@@ -70,7 +70,7 @@ export default function AddSKUs() {
         let labels = [];
         worksheet.eachRow((row, rowIndex) => {
             if (rowIndex === 1) {
-                labels = row.values.slice(1); // slice(1) because ExcelJS rows are 1-based and row.values[0] is undefined
+                labels = skuFields.map((field) => field.label);
             } else {
                 let rowData = row.values.slice(1);
                 rowData = rowData.map((data) =>
@@ -84,8 +84,37 @@ export default function AddSKUs() {
                 parsedData.push(skuFieldsData);
             }
         });
-        setExcelData(parsedData);
-        setSKUAtt(file);
+        if(isSKUDataValid(parsedData)){
+            setExcelData(parsedData);
+            setSKUAtt(file);
+        }
+        else {
+            setExcelData([]);
+            setSKUAtt(null);
+        }
+    };
+
+    const isSKUDataValid = (data) => {
+        let isValid = true, message = "";
+        data.forEach((row) => {
+            skuFields.forEach((field) => {
+                if (field.required && !row[field.key]) {
+                    isValid = false;
+                    message = `Field ${field.label} is required`;
+                    console.log(message, `Field ${field.label} is required`);
+                }
+                if(field.type === "number" && row[field.key] && isNaN(convertToNumber(row[field.key]))) {
+                    isValid = false;
+                    message = `Field ${field.label} should be a number`;
+                    console.log(message, `Field ${field.label} should be a number`);
+                }
+                if(field.key === "ean")
+                console.log(row[field.key], field.key, field.label, isNaN(parseInt(row[field.key])));
+            });
+        });
+        if(!isValid)
+        alert(message);
+        return isValid;
     };
 
     const addSKUs = async (e) => {
@@ -94,11 +123,10 @@ export default function AddSKUs() {
         if (!skuAtt) return;
         setSubmitLoading(true);
         const formData = new FormData();
-        console.log(JSON.parse(JSON.stringify(excelData)))
+        // console.log(JSON.parse(JSON.stringify(excelData)))
         formData.append("createdBy", createdBy);
         formData.append("skus", JSON.stringify(excelData));
-        console.log(excelData)
-        const skuUrl = `${process.env.REACT_APP_SERVER_URL}sku/new/${vendor.vendorCode}`;
+        const skuUrl = `${process.env.REACT_APP_SERVER_URL}/sku/new/${vendor.vendorCode}`;
         const skuResp = await fetch(skuUrl, {
             method: "POST",
             body: formData,
@@ -231,30 +259,6 @@ export default function AddSKUs() {
                             id="product-category"
                             label="Product Category"
                             value={vendor ? vendor.productCategory : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                            size="small"
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        <TextField
-                            id="country"
-                            label="Country"
-                            value={vendor ? vendor.country : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                            size="small"
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        <TextField
-                            id="state"
-                            label="State"
-                            value={vendor ? vendor.state : ""}
                             InputProps={{
                                 readOnly: true,
                             }}
