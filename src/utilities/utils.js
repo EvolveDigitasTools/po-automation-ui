@@ -198,3 +198,13 @@ export const getFile = async (idType, id) => {
         return null;
     }
 };
+
+export const convertToNumber = (value) => {
+    if (typeof value === 'number' && !isNaN(value)) {
+        return value; // Already a number
+    }
+    if (typeof value === 'string' && /^\d+$/.test(value)) {
+        return Number(value); // Convert valid numeric string to number
+    }
+    return NaN; // Return NaN for invalid cases
+}
