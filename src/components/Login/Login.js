@@ -16,7 +16,7 @@ export default function Login() {
 
   async function loginUser(e) {
     e.preventDefault();
-    const loginUrl = `${process.env.REACT_APP_SERVER_URL}auth/login`
+    const loginUrl = `${process.env.REACT_APP_SERVER_URL}/auth/login`
     const formData = new FormData();
     formData.append("userName", userName);
     formData.append("password", pass);
