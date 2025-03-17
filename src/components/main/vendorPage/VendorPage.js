@@ -330,6 +330,7 @@ export default function VendorPage() {
         const vendorRelatedIds = await createVendor();
         if (vendorRelatedIds) {
             const res = await uploadVendorAttachments(vendorRelatedIds)
+            await sendVendorVerificationMail(vendorRelatedIds);
             setVendorSubmitLoading(false);
             setProcessStage("success");
         } else {
@@ -415,6 +416,23 @@ export default function VendorPage() {
         } catch (error) {
             console.error("Error uploading attachments:", error);
             return false;
+        }
+    };
+
+    const sendVendorVerificationMail = async (vendorRelatedIds) => {
+        const formData = new FormData();
+        formData.append("vendorId", vendorRelatedIds.vendorId);
+
+        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/new-complete`, {
+            method: "POST",
+            body: formData,
+        });
+        const jsonResponse = await response.json();
+        if (!jsonResponse.success) {
+            // alert(jsonResponse.message + "/nPlease contact the admin and you can take this screenshot to share with team");
+            return;
+        } else {
+            return;
         }
     };
 
