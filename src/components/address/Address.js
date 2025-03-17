@@ -5,6 +5,8 @@ export default function Address({ value, onChange, editMode }) {
     const [countries, setCountries] = useState([]);
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
+    const [statesNoOptionsText, setStatesNoOptionsText] = useState("Please select a country first");
+    const [citiesNoOptionsText, setCitiesNoOptionsText] = useState("Please select a state first");
 
     useEffect(() => {
         const getCountries = async () => {
@@ -22,11 +24,24 @@ export default function Address({ value, onChange, editMode }) {
 
     useEffect(() => {
         const getStates = async (country_code) => {
-            if (!country_code || country_code === "") return [];
+            if (!country_code || country_code === "") {
+                setStates([]);
+                setCities([]);
+                return;
+            }
+            setStatesNoOptionsText("Loading...");
             const statesURL = `${process.env.REACT_APP_SERVER_URL}/utils/states?country_code=${country_code}`;
             const dataResponse = await fetch(statesURL);
             const data = await dataResponse.json();
-            setStates(data);
+            if (data.length === 0) {
+                setStates(["Not Applicable"]);
+                setCities(["Not Applicable"]);
+            }
+            else {
+                setStates(data);
+                setCities([]);
+            }
+            setStatesNoOptionsText("Please select a country first.");
         };
 
         const asyncUseEffect = async () => {
@@ -37,11 +52,19 @@ export default function Address({ value, onChange, editMode }) {
 
     useEffect(() => {
         const getCities = async (state_code) => {
-            if (!state_code || state_code === "") return [];
+            if (!state_code || state_code === "") {
+                setCities([]);
+                return;
+            };
+            setCitiesNoOptionsText("Loading...");
             const citiesURL = `${process.env.REACT_APP_SERVER_URL}/utils/cities?state_code=${state_code}`;
             const dataResponse = await fetch(citiesURL);
             const data = await dataResponse.json();
-            setCities(data);
+            if (data.length === 0)
+                setCities(["Not Applicable"]);
+            else
+                setCities(data);
+            setCitiesNoOptionsText("Please select a state first.");
         };
 
         const asyncUseEffect = async () => {
@@ -167,33 +190,32 @@ export default function Address({ value, onChange, editMode }) {
             </Grid>
             <Grid item xs={6}>
                 {editMode ? (
-                    states.length > 0 && (
-                        <Autocomplete
-                            disablePortal
-                            size="small"
-                            id="state"
-                            options={states}
-                            getOptionLabel={(option) =>
-                                option.name ? option.name : ""
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    required
-                                    {...params}
-                                    inputProps={{
-                                        ...params.inputProps,
-                                        autoComplete: "new-password",
-                                        style: { width: "auto" },
-                                    }}
-                                    label="State"
-                                />
-                            )}
-                            value={value.state}
-                            onChange={(e, newValue) =>
-                                updateAddress("state", newValue)
-                            }
-                        />
-                    )
+                    <Autocomplete
+                        disablePortal
+                        size="small"
+                        id="state"
+                        options={states}
+                        getOptionLabel={(option) =>
+                            option.name ? option.name : ""
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                required
+                                {...params}
+                                inputProps={{
+                                    ...params.inputProps,
+                                    autoComplete: "new-password",
+                                    style: { width: "auto" },
+                                }}
+                                label="State"
+                            />
+                        )}
+                        value={value.state}
+                        noOptionsText={statesNoOptionsText}
+                        onChange={(e, newValue) =>
+                            updateAddress("state", newValue)
+                        }
+                    />
                 ) : (
                     <TextField
                         InputProps={{
@@ -209,33 +231,32 @@ export default function Address({ value, onChange, editMode }) {
             </Grid>
             <Grid item xs={6}>
                 {editMode ? (
-                    cities.length > 0 && (
-                        <Autocomplete
-                            disablePortal
-                            size="small"
-                            id="city"
-                            options={cities}
-                            getOptionLabel={(option) =>
-                                option.name ? option.name : ""
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    required
-                                    {...params}
-                                    inputProps={{
-                                        ...params.inputProps,
-                                        autoComplete: "new-password",
-                                        style: { width: "auto" },
-                                    }}
-                                    label="City"
-                                />
-                            )}
-                            value={value.city}
-                            onChange={(e, newValue) =>
-                                updateAddress("city", newValue)
-                            }
-                        />
-                    )
+                    <Autocomplete
+                        disablePortal
+                        size="small"
+                        id="city"
+                        options={cities}
+                        getOptionLabel={(option) =>
+                            option.name ? option.name : ""
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                required
+                                {...params}
+                                inputProps={{
+                                    ...params.inputProps,
+                                    autoComplete: "new-password",
+                                    style: { width: "auto" },
+                                }}
+                                label="City"
+                            />
+                        )}
+                        value={value.city}
+                        noOptionsText={citiesNoOptionsText}
+                        onChange={(e, newValue) =>
+                            updateAddress("city", newValue)
+                        }
+                    />
                 ) : (
                     <TextField
                         id="city"
