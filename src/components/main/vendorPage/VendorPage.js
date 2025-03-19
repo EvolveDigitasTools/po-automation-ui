@@ -338,7 +338,7 @@ export default function VendorPage() {
                     vendorUpdate[key] = vendor[key];
                 }
             }
-            if(vendor['otherFields']?.length > 0) {
+            if(vendor && vendor['otherFields']?.length > 0) {
                 setDynamicFields(vendor['otherFields']);
                 setDynamicFieldsAttachments(vendor['otherFields'].map((field) => field.attachment));
             }
