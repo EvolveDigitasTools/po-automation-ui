@@ -22,9 +22,9 @@ export const openInBrowserTypes = [
     "video/webm",
     "video/ogg",
     // Audio
-    "audio/mpeg",
-    "audio/ogg",
-    "audio/wav",
+    // "audio/mpeg",
+    // "audio/ogg",
+    // "audio/wav",
 ];
 
 export const openInBrowserExtensions = [
@@ -50,9 +50,9 @@ export const openInBrowserExtensions = [
     "webm",
     "ogg",
     // Audio
-    "mp3",
-    "ogg",
-    "wav",
+    // "mp3",
+    // "ogg",
+    // "wav",
 ];
 
 export const labelToKey = (label, fieldsData) => {
@@ -207,4 +207,55 @@ export const convertToNumber = (value) => {
         return Number(value); // Convert valid numeric string to number
     }
     return NaN; // Return NaN for invalid cases
+}
+
+export const downloadAttachment = async (attachmentDetails) => {
+    const { id: attachmentId, name, mimeType, totalChunks } = attachmentDetails;
+    const binaryChunks = [];
+
+    // Fetch each chunk sequentially
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const response = await fetch(
+            `${process.env.REACT_APP_SERVER_URL}/attachment/chunk/${attachmentId}/${chunkIndex}`
+        );
+        if (!response.ok) {
+            console.error(`Failed to fetch chunk ${chunkIndex}`);
+            return;
+        }
+        const json = await response.json();
+        if (!json.success) {
+            console.error(`Error fetching chunk ${chunkIndex}: ${json.message}`);
+            return;
+        }
+        binaryChunks.push(atob(json.data.chunk.chunkData));
+    }
+
+    // Combine all chunks into a full base64 string
+    const fullBinary = binaryChunks.join("");
+    // Decode base64 to binary string
+    const len = fullBinary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = fullBinary.charCodeAt(i);
+    }
+
+    // Create a blob with the proper MIME type
+    const blob = new Blob([bytes], { type: mimeType });
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    const extension = name.split(".").pop().toLowerCase();
+    if (
+        openInBrowserTypes.includes(mimeType) ||
+        openInBrowserExtensions.includes(extension)
+    ) {
+        window.open(downloadUrl, "_blank");
+    } else {
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    window.URL.revokeObjectURL(downloadUrl);
 }
