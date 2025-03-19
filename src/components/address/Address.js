@@ -23,55 +23,69 @@ export default function Address({ value, onChange, editMode }) {
     }, []);
 
     useEffect(() => {
-        const getStates = async (country_code) => {
-            if (!country_code || country_code === "") {
-                setStates([]);
-                setCities([]);
-                return;
-            }
-            setStatesNoOptionsText("Loading...");
-            const statesURL = `${process.env.REACT_APP_SERVER_URL}/utils/states?country_code=${country_code}`;
-            const dataResponse = await fetch(statesURL);
-            const data = await dataResponse.json();
-            if (data.length === 0) {
-                setStates(["Not Applicable"]);
-                setCities(["Not Applicable"]);
-            }
-            else {
-                setStates(data);
-                setCities([]);
-            }
-            setStatesNoOptionsText("Please select a country first.");
-        };
-
         const asyncUseEffect = async () => {
+            // console.log('called',value.country);
+            if (typeof value.country === "string") {
+                const country = countries.find((country) => country.name === value.country);
+                updateAddress("country", country);
+            }
             await getStates(value.country?.iso2);
         };
         asyncUseEffect();
     }, [value.country]);
 
     useEffect(() => {
-        const getCities = async (state_code) => {
-            if (!state_code || state_code === "") {
-                setCities([]);
-                return;
-            };
-            setCitiesNoOptionsText("Loading...");
-            const citiesURL = `${process.env.REACT_APP_SERVER_URL}/utils/cities?state_code=${state_code}`;
-            const dataResponse = await fetch(citiesURL);
-            const data = await dataResponse.json();
-            if (data.length === 0)
-                setCities(["Not Applicable"]);
-            else
-                setCities(data);
-            setCitiesNoOptionsText("Please select a state first.");
-        };
-
         const asyncUseEffect = async () => {
+            if (typeof value.state === "string") {
+                const state = states.find((state) => state.name === value.state);
+                updateAddress("state", state);
+            }
             await getCities(value.state?.state_code);
         };
         asyncUseEffect();
     }, [value.state]);
+
+    const getStates = async (country_code) => {
+        if (!country_code || country_code === "") {
+            setStates([]);
+            setCities([]);
+            return;
+        }
+        setStatesNoOptionsText("Loading...");
+        const statesURL = `${process.env.REACT_APP_SERVER_URL}/utils/states?country_code=${country_code}`;
+        const dataResponse = await fetch(statesURL);
+        const data = await dataResponse.json();
+        if (data.length === 0) {
+            setStates(["Not Applicable"]);
+            setCities(["Not Applicable"]);
+        }
+        else {
+            setStates(data);
+            setCities([]);
+        }
+        setStatesNoOptionsText("Please select a country first.");
+    };
+
+    const getCities = async (state_code) => {
+        if (!state_code || state_code === "") {
+            setCities([]);
+            return;
+        };
+        setCitiesNoOptionsText("Loading...");
+        const citiesURL = `${process.env.REACT_APP_SERVER_URL}/utils/cities?state_code=${state_code}`;
+        const dataResponse = await fetch(citiesURL);
+        const data = await dataResponse.json();
+        if (data.length === 0)
+            setCities(["Not Applicable"]);
+        else
+            setCities(data);
+        if (value.city) {
+            const city = data.find((city) => city.name === value.city);
+            if (city)
+                updateAddress("city", city);
+        }
+        setCitiesNoOptionsText("Please select a state first.");
+    };
 
     const updateAddress = (id, newValue) => {
         const newAddress = {
@@ -112,7 +126,7 @@ export default function Address({ value, onChange, editMode }) {
                     }
                 />
             </Grid>
-            <Grid item xs={12}>
+            {(value.addressLine2 || !editMode) && <Grid item xs={12}>
                 <TextField
                     InputProps={{
                         readOnly: editMode ? false : true,
@@ -126,7 +140,7 @@ export default function Address({ value, onChange, editMode }) {
                         updateAddress("addressLine2", e.target.value)
                     }
                 />
-            </Grid>
+            </Grid>}
             <Grid item xs={6}>
                 {editMode ? (
                     <Autocomplete
@@ -184,7 +198,7 @@ export default function Address({ value, onChange, editMode }) {
                         label="Country"
                         fullWidth
                         size="small"
-                        value={value.country}
+                        value={value.country.name}
                     />
                 )}
             </Grid>
@@ -225,7 +239,7 @@ export default function Address({ value, onChange, editMode }) {
                         label="State"
                         fullWidth
                         size="small"
-                        value={value.state}
+                        value={value.state.name}
                     />
                 )}
             </Grid>
@@ -266,7 +280,7 @@ export default function Address({ value, onChange, editMode }) {
                         label="City"
                         fullWidth
                         size="small"
-                        value={value.city}
+                        value={value.city.name}
                     />
                 )}
             </Grid>

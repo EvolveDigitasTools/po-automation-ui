@@ -2,6 +2,7 @@ import React, { Fragment } from "react";
 import { TextField, Grid, Fab } from "@mui/material";
 import Attachment from "../attachment/Attachment";
 import { Add, Delete } from "@mui/icons-material";
+import { downloadAttachment } from "../../utilities/utils";
 
 export default function DynamicFields({
     fields,
@@ -124,6 +125,7 @@ export default function DynamicFields({
                     <Attachment
                         label="Attachment"
                         file={fieldsAttachments[index]}
+                        downloadFile={(editMode || !fieldsAttachments[index] ? null : () => downloadAttachment(fieldsAttachments[index]))}
                     />
                 </Grid>
             </Fragment>

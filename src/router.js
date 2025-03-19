@@ -36,11 +36,11 @@ export const router = createBrowserRouter(
                 <Route path="/success" element={<Success />} />
                 <Route
                     path="/review-vendor/:validateToken"
-                    element={<VendorDetails />}
+                    element={<VendorPage />}
                 />
                 <Route
                     path="/update-vendor/:validateToken"
-                    element={<VendorRegistration />}
+                    element={<VendorPage />}
                 />
                 <Route
                     path="/review-skus/:validateToken"

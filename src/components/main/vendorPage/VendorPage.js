@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Loading from "../../loading/Loading";
 import Success from "../../success/Succes";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
     Autocomplete,
+    Box,
     Button,
+    Checkbox,
+    FormControlLabel,
     Grid,
     IconButton,
     Stack,
@@ -16,13 +19,15 @@ import Address from "../../address/Address";
 import "./VendorPage.css";
 import DynamicFields from "../../dynamicFields/DynamicFields";
 import { LoadingButton } from "@mui/lab";
+import jwtDecode from "jwt-decode";
+import { downloadAttachment } from "../../../utilities/utils";
 
 const configDetails = {
     title: {
         "new-vendor": "",
+        "review-vendor": "Review Vendor Details",
         "update-vendor": "Update Vendor Details",
         "view-vendor": "",
-        "verify-vendor": "Verify Vendor Details",
     },
 };
 const CHUNK_SIZE = 2 * 1024 * 1024;
@@ -122,9 +127,17 @@ const vendorFields = [
         uiWidth: "full",
         destructForApi: true,
         destructSettings: {
-            country: "name",
-            state: "name",
-            city: "name",
+            country: {
+                countryName: "name",
+                countryCode: "iso2"
+            },
+            state: {
+                stateName: "name",
+                stateCode: "state_code"
+            },
+            city: {
+                cityName: "name"
+            },
         },
     },
     {
@@ -263,13 +276,32 @@ const isEditMode = (mode) => {
     return ["new-vendor", "update-vendor"].includes(mode);
 };
 
+const getVendorCodeFromValidateToken = (params) => {
+    const validateToken = params.validateToken;
+    let vendorCode = params.vendorCode;
+    if (!vendorCode && validateToken) {
+        const decodedToken = jwtDecode(validateToken);
+        vendorCode = decodedToken.vendorCode;
+        return vendorCode;
+    }
+    return null;
+};
+
+const getVendorDetails = async (vendorCode) => {
+    const getVendorDetailsUrl = `${process.env.REACT_APP_SERVER_URL}/vendor/${vendorCode}`;
+    const vendorResponse = await fetch(getVendorDetailsUrl);
+    const vendorJson = await vendorResponse.json();
+    const vendorDetails = vendorJson.data.vendor;
+    return vendorDetails;
+};
+
 export default function VendorPage() {
     const [processStage, setProcessStage] = useState("process");
     const [vendorSubmitLoading, setVendorSubmitLoading] = useState(false);
     const [mode, setMode] = useState("new-vendor");
-    const [commentData, setCommentData] = useState("");
-    const [countryStateCityData, setCountryStateCityData] = useState([]);
+    const [vendorOldData, setVendorOldData] = useState({});
     const [vendorData, setVendorData] = useState(getDefaultVendorData());
+    const [updatedAttachments, setUpdatedAttachments] = useState([]);
     const [isSubmitPressed, setSubmitPressed] = useState(false);
     const [dynamicFields, setDynamicFields] = useState([]);
     const [dynamicFieldsAttachments, setDynamicFieldsAttachments] = useState(
@@ -278,41 +310,49 @@ export default function VendorPage() {
     const [isLocalVendorRegistration, setLocalVendorRegistration] =
         useState(false);
     const [localEmail, setLocalEmail] = useState("");
+    const [vendorCode, setVendorCode] = useState("");
 
-    //ComponentDidMount
-    // useEffect(() => {
-    //     const getCountryStateCitydata = async () => {
-    //         const countryStateCityDataURL =
-    //             "https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json";
-    //         const dataResponse = await fetch(countryStateCityDataURL);
-    //         const data = await dataResponse.json();
-    //         setCountryStateCityData(data);
-    //         return data;
-    //     };
+    const [checkboxChecked, setCheckboxChecked] = useState(false);
+    const [denyOpen, setDenyOpen] = useState(false);
+    const [denyReason, setDenyReason] = useState("");
 
-    //     const asyncUseEffect = async () => {
-    //         await getCountryStateCitydata();
-    //         setProcessStage("working"); //TODO think of a better name for working stage
-    //     };
-    //     asyncUseEffect();
+    const params = useParams();
+    const location = useLocation();
 
-    //     fetch(`${process.env.REACT_APP_SERVER_URL}`)
-    //         .then((response) => {
-    //             console.log("API is working");
-    //         })
-    //         .catch((error) => {
-    //             setMode("");
-    //             console.error("API error:", error);
-    //         });
+    // ComponentDidMount
+    useEffect(() => {
+        const urlParts = location.pathname.split("/");
+        const mode = urlParts[1];
+        modeSetup(mode);
+    }, []);
 
-    //     return () => {
-    //         // This code will run when the component is unmounted
-    //         // You can perform any cleanup tasks here, such as unsubscribing from subscriptions
-    //         // console.log("Component unmounted");
-    //     };
-    // }, []);
+    const modeSetup = async (mode) => {
+        if (["review-vendor", "update-vendor"].includes(mode)) {
+            setProcessStage("loading");
+            const vendorCode = getVendorCodeFromValidateToken(params);
+            const vendor = await getVendorDetails(vendorCode);
+
+            const vendorUpdate = vendorData;
+            for (const key in vendor) {
+                if (vendor[key]) {
+                    vendorUpdate[key] = vendor[key];
+                }
+            }
+            if(vendor['otherFields']?.length > 0) {
+                setDynamicFields(vendor['otherFields']);
+                setDynamicFieldsAttachments(vendor['otherFields'].map((field) => field.attachment));
+            }
+            setVendorOldData(vendorUpdate);
+            setVendorData(vendorUpdate)
+            setProcessStage("process");
+            setMode(mode);
+            setVendorCode(vendorCode);
+        }
+    };
 
     const updateVendorField = (vendorFieldId, updatedData) => {
+        if (vendorFields.find(vendorField => vendorField.id === vendorFieldId).fieldType === "attachment")
+            setUpdatedAttachments([...updatedAttachments, vendorFieldId]);
         setVendorData({
             ...vendorData,
             [vendorFieldId]: updatedData,
@@ -320,25 +360,31 @@ export default function VendorPage() {
     };
 
     const submit = async (e) => {
-        e.preventDefault();
-        setVendorSubmitLoading(true);
-        setSubmitPressed(true);
-        if (!areAllDetailsSubmitted()) {
-            setVendorSubmitLoading(false);
-            return;
-        }
-        const vendorRelatedIds = await createVendor();
-        if (vendorRelatedIds) {
-            const res = await uploadVendorAttachments(vendorRelatedIds)
-            await sendVendorVerificationMail(vendorRelatedIds);
-            setVendorSubmitLoading(false);
-            setProcessStage("success");
-        } else {
+        try {
+            e.preventDefault();
+            setVendorSubmitLoading(true);
+            setSubmitPressed(true);
+            if (!areAllDetailsSubmitted()) {
+                setVendorSubmitLoading(false);
+                return;
+            }
+            const vendorRelatedIds = await createOrUpdateVendor();
+            if (vendorRelatedIds) {
+                const res = await uploadVendorAttachments(vendorRelatedIds)
+                await sendVendorVerificationMail(vendorRelatedIds);
+                setVendorSubmitLoading(false);
+                setProcessStage("success");
+            } else {
+                setVendorSubmitLoading(false);
+            }
+        } catch (error) {
+            alert("Error submitting vendor details. Please contact the admin and you can take this screenshot to share with team");
+            console.error("Error submitting vendor details:", error);
             setVendorSubmitLoading(false);
         }
     };
 
-    const createVendor = async () => {
+    const createOrUpdateVendor = async () => {
         const formData = new FormData();
 
         vendorFields
@@ -352,13 +398,25 @@ export default function VendorPage() {
                         let destructSetting =
                             vendorField.destructSettings[vendorFieldEntry];
                         if (destructSetting)
-                            formData.append(
-                                vendorFieldEntry,
-                                vendorData[vendorField.id][vendorFieldEntry][
-                                destructSetting
-                                ]
-                            );
-                        else if (vendorData[vendorField.id][vendorFieldEntry] && vendorData[vendorField.id][vendorFieldEntry].length > 0)
+                            Object.keys(destructSetting).forEach((formField) => {
+                                const vendorKey = destructSetting[formField];
+                                const value =
+                                    vendorData[vendorField.id] &&
+                                        vendorData[vendorField.id][vendorFieldEntry] &&
+                                        vendorData[vendorField.id][vendorFieldEntry][vendorKey]
+                                        ? vendorData[vendorField.id][vendorFieldEntry][vendorKey]
+                                        : "";
+                                const oldValue = 
+                                    vendorOldData[vendorField.id] &&
+                                        vendorOldData[vendorField.id][vendorFieldEntry] &&
+                                        vendorOldData[vendorField.id][vendorFieldEntry][vendorKey]
+                                        ? vendorOldData[vendorField.id][vendorFieldEntry][vendorKey]
+                                        : "";
+                                console.log('value', value, oldValue);
+                                if (value !== oldValue)
+                                formData.append(formField, value);
+                            });
+                        else if (vendorData[vendorField.id][vendorFieldEntry] && vendorData[vendorField.id][vendorFieldEntry].length > 0 && vendorOldData[vendorField.id][vendorFieldEntry] !== vendorData[vendorField.id][vendorFieldEntry])
                             formData.append(
                                 vendorFieldEntry,
                                 vendorData[vendorField.id][vendorFieldEntry]
@@ -366,19 +424,32 @@ export default function VendorPage() {
                     }
                 } else if (
                     vendorData[vendorField.id] &&
-                    vendorData[vendorField.id].length > 0
+                    vendorData[vendorField.id].length > 0 &&
+                    vendorOldData[vendorField.id] !== vendorData[vendorField.id]
                 )
                     formData.append(vendorField.id, vendorData[vendorField.id]);
             });
-        const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/new-start`, {
-            method: "POST",
-            body: formData,
-        })
-        const jsonResponse = await response.json();
-        if (jsonResponse.success) {
+
+        if(dynamicFields.length > 0)
+            formData.append("otherFields", JSON.stringify(dynamicFields));
+        let response, jsonResponse
+        if (mode === "new-vendor") {
+            response = await fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/new-start`, {
+                method: "POST",
+                body: formData,
+            })
+            jsonResponse = await response.json();
+        } else if(mode === "update-vendor") {
+            response = await fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/update/${vendorCode}`, {
+                method: "PUT",
+                body: formData,
+            })
+            jsonResponse = await response.json();
+        }
+        if (jsonResponse?.success) {
             return jsonResponse.data
         } else {
-            alert(response.message + "/nPlease contact the admin and you can take this screenshot to share with team");
+            alert(response?.message + "/nPlease contact the admin and you can take this screenshot to share with team");
             return null;
         }
     };
@@ -386,7 +457,7 @@ export default function VendorPage() {
     const uploadVendorAttachments = async (vendorRelatedIds) => {
         try {
             for (let vendorField of vendorFields) {
-                if (vendorField.fieldType === "attachment" && vendorData[vendorField.id]) {
+                if (vendorField.fieldType === "attachment" && vendorData[vendorField.id] && updatedAttachments.includes(vendorField.id)) {
                     const attachmentBody = {
                         file: vendorData[vendorField.id],
                         attachmentType: vendorField.attachmentType,
@@ -394,7 +465,7 @@ export default function VendorPage() {
                         entityId: vendorRelatedIds[convertEntityNameToId(vendorField.entityName)]
                     }
                     const res = await uploadAttachment(attachmentBody);
-                    if(!res) return false;
+                    if (!res) return false;
                 }
             }
 
@@ -408,7 +479,7 @@ export default function VendorPage() {
                         entityId: vendorRelatedIds['otherFields'].find(otherField => otherField.key === dynamicFields[i].key).id
                     }
                     const res = await uploadAttachment(attachmentBody);
-                    if(!res) return false;
+                    if (!res) return false;
                 }
             }
 
@@ -499,6 +570,27 @@ export default function VendorPage() {
         return true;
     };
 
+    const validateNewVendor = async (e, isRecordValid) => {
+        e.preventDefault();
+        setProcessStage("loading");
+        const formData = new FormData();
+        formData.append("isValid", isRecordValid);
+        if (!isRecordValid) formData.append("reason", denyReason);
+
+        const validateVendorUrl = `${process.env.REACT_APP_SERVER_URL}/vendor/validate/${vendorCode}`;
+        const validationResponse = await fetch(validateVendorUrl, {
+            method: "POST",
+            body: formData,
+        });
+        const vendorJson = await validationResponse.json();
+        if (vendorJson.success) {
+            setProcessStage("success");
+        } else {
+            alert("Some error occured. Please contact the admin and you can take this screenshot to share with team");
+            setProcessStage("process");
+        }
+    };
+
     const renderVendorField = (vendorField) => {
         if (vendorField.fieldType === "head")
             return <h2>{vendorField.label}</h2>;
@@ -509,9 +601,8 @@ export default function VendorPage() {
                 <Attachment
                     label={vendorField.label}
                     file={vendorData[vendorField.id]}
-                    updateFile={(file) =>
-                        updateVendorField(vendorField.id, file)
-                    }
+                    updateFile={isEditMode(mode) ? (file) => updateVendorField(vendorField.id, file) : null}
+                    downloadFile={(isEditMode(mode) || !vendorData[vendorField.id]) ? null : () => downloadAttachment(vendorData[vendorField.id])}
                     required={vendorField.isRequired}
                     submit={isSubmitPressed}
                 />
@@ -611,13 +702,13 @@ export default function VendorPage() {
                 )}
                 <h1>{configDetails.title[mode]}</h1>
 
-                {commentData.length > 0 && (
+                {vendorData['comment']?.length > 0 && (
                     <TextField
                         id="comments"
                         label="Problem(s)"
                         multiline
                         rows={4}
-                        value={commentData}
+                        value={vendorData['comment']}
                         fullWidth
                         size="small"
                         variant="outlined"
@@ -679,7 +770,122 @@ export default function VendorPage() {
                             </Grid>
                         )}
                         {isLocalVendorRegistration && <Grid item xs={6}></Grid>}
-                        <Grid item xs={12}>
+                        {mode === "review-vendor" && (
+                            <>
+                                <Grid item xs={12}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                color="primary"
+                                                onChange={(e) =>
+                                                    setCheckboxChecked(e.target.checked)
+                                                }
+                                            />
+                                        }
+                                        label="I confirm that I have reviewed and verified all the details and documents in this form"
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    {checkboxChecked && (
+                                        <Box
+                                            mt={5}
+                                            display="flex"
+                                            justifyContent="center"
+                                        >
+                                            <Box mx={2}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    fullWidth
+                                                    size="small"
+                                                    style={{
+                                                        borderRadius: "50px",
+                                                        fontSize: "18px",
+                                                        fontWeight: "600",
+                                                        textTransform: "none",
+                                                    }}
+                                                    onClick={(e) => validateNewVendor(e, true)}
+                                                >
+                                                    Approve
+                                                </Button>
+                                            </Box>
+                                            <Box mx={2}>
+                                                <Button
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    fullWidth
+                                                    size="small"
+                                                    onClick={() => setDenyOpen(true)}
+                                                    style={{
+                                                        borderRadius: "50px",
+                                                        fontSize: "18px",
+                                                        fontWeight: "600",
+                                                        textTransform: "none",
+                                                    }}
+                                                >
+                                                    Reject
+                                                </Button>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Grid>
+                                <Grid item xs={12}>
+                                    {denyOpen && checkboxChecked && (
+                                        <Box
+                                            mt={5}
+                                            display="flex"
+                                            justifyContent="center"
+                                        >
+                                            <Box mx={2} width="75%">
+                                                <TextField
+                                                    autoFocus
+                                                    margin="dense"
+                                                    id="deny-reason"
+                                                    label="Denial Reason"
+                                                    type="text"
+                                                    fullWidth
+                                                    size="small"
+                                                    multiline // Added multiline property
+                                                    rows={4} // Added rows property
+                                                    value={denyReason}
+                                                    onChange={(e) =>
+                                                        setDenyReason(e.target.value)
+                                                    }
+                                                    style={{
+                                                        borderRadius: "50px",
+                                                        fontSize: "18px",
+                                                        fontWeight: "600",
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Box
+                                                mx={2}
+                                                display="flex"
+                                                justifyContent="center"
+                                                alignItems="center"
+                                            >
+                                                <Button
+                                                    onClick={(e) => validateNewVendor(e, false)}
+                                                    color="primary"
+                                                    fullWidth
+                                                    size="small"
+                                                    style={{
+                                                        borderRadius: "50px",
+                                                        fontSize: "18px",
+                                                        fontWeight: "600",
+                                                        textTransform: "none",
+                                                        width: "200px",
+                                                    }}
+                                                >
+                                                    Submit
+                                                </Button>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Grid>
+                            </>
+                        )}
+                        {isEditMode(mode) && <Grid item xs={12}>
                             {vendorSubmitLoading ? (
                                 <LoadingButton
                                     variant="contained"
@@ -702,7 +908,7 @@ export default function VendorPage() {
                                     Submit
                                 </Button>
                             )}
-                        </Grid>
+                        </Grid>}
                     </Grid>
                 </Stack>
             </div>
