@@ -1,9 +1,9 @@
 export const skuFields = [
-    { label: "SKU Code", key: "skuCode", required: true },
+    { label: "SKU Code", key: "skuCode", required: true, apiType: "string" },
     { label: "Category", key: "category", required: true },
     { label: "Sub Category", key: "subCategory" },
-    { label: "Product Title", key: "productTitle", required: true },
-    { label: "SAP Code", key: "sapCode" },
+    { label: "Product Title", key: "productTitle", required: true, charLimit: 255 },
+    { label: "SAP Code", key: "sapCode", type: "number", apiType: "string" },
     { label: "HSN", key: "hsn", type: "number" },
     { label: "EAN", key: "ean", type: "number" },
     { label: "Model Number", key: "modelNumber" },

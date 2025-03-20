@@ -108,8 +108,14 @@ export default function AddSKUs() {
                     message = `Field ${field.label} should be a number`;
                     console.log(message, `Field ${field.label} should be a number`);
                 }
-                if(field.key === "ean")
-                console.log(row[field.key], field.key, field.label, isNaN(parseInt(row[field.key])));
+                if(field.charLimit && row[field.key] && row[field.key].length > field.charLimit){
+                    isValid = false;
+                    message = `Field ${field.label} should be less than ${field.charLimit} characters`;
+                    console.log(message, `Field ${field.label} should be less than ${field.charLimit} characters`);
+                }
+                if(field.apiType === "string" && row[field.key] && !isNaN(convertToNumber(row[field.key]))){
+                    row[field.key] = row[field.key].toString();
+                }
             });
         });
         if(!isValid)
@@ -137,7 +143,7 @@ export default function AddSKUs() {
             setSubmitLoading(false);
         } else {
             setSubmitLoading(false)
-            alert("Some problem occured. Please check your sku sheet or contact tech team")
+            alert(`Some problem occured - ${skuData.message} . Please check your sku sheet or contact tech team `)
         }
     };
     if (loading)
