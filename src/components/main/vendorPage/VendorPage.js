@@ -324,6 +324,8 @@ export default function VendorPage() {
         const urlParts = location.pathname.split("/");
         const mode = urlParts[1];
         modeSetup(mode);
+        if(urlParts[1] === "admin")
+            setLocalVendorRegistration(true);
     }, []);
 
     const modeSetup = async (mode) => {
@@ -338,7 +340,7 @@ export default function VendorPage() {
                     vendorUpdate[key] = vendor[key];
                 }
             }
-            if(vendor && vendor['otherFields']?.length > 0) {
+            if (vendor && vendor['otherFields']?.length > 0) {
                 setDynamicFields(vendor['otherFields']);
                 setDynamicFieldsAttachments(vendor['otherFields'].map((field) => field.attachment));
             }
@@ -406,7 +408,7 @@ export default function VendorPage() {
                                         vendorData[vendorField.id][vendorFieldEntry][vendorKey]
                                         ? vendorData[vendorField.id][vendorFieldEntry][vendorKey]
                                         : "";
-                                const oldValue = 
+                                const oldValue =
                                     vendorOldData[vendorField.id] &&
                                         vendorOldData[vendorField.id][vendorFieldEntry] &&
                                         vendorOldData[vendorField.id][vendorFieldEntry][vendorKey]
@@ -414,9 +416,9 @@ export default function VendorPage() {
                                         : "";
                                 console.log('value', value, oldValue);
                                 if (value !== oldValue)
-                                formData.append(formField, value);
+                                    formData.append(formField, value);
                             });
-                        else if (vendorData[vendorField.id][vendorFieldEntry] && vendorData[vendorField.id][vendorFieldEntry].length > 0 && vendorOldData[vendorField.id][vendorFieldEntry] !== vendorData[vendorField.id][vendorFieldEntry])
+                        else if (vendorData[vendorField.id] && [vendorFieldEntry] && vendorData[vendorField.id][vendorFieldEntry].length > 0 && (vendorOldData[vendorField.id] ? vendorOldData[vendorField.id][vendorFieldEntry] : null) !== vendorData[vendorField.id][vendorFieldEntry])
                             formData.append(
                                 vendorFieldEntry,
                                 vendorData[vendorField.id][vendorFieldEntry]
@@ -430,7 +432,7 @@ export default function VendorPage() {
                     formData.append(vendorField.id, vendorData[vendorField.id]);
             });
 
-        if(dynamicFields.length > 0)
+        if (dynamicFields.length > 0)
             formData.append("otherFields", JSON.stringify(dynamicFields));
         let response, jsonResponse
         if (mode === "new-vendor") {
@@ -439,7 +441,7 @@ export default function VendorPage() {
                 body: formData,
             })
             jsonResponse = await response.json();
-        } else if(mode === "update-vendor") {
+        } else if (mode === "update-vendor") {
             response = await fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/update/${vendorCode}`, {
                 method: "PUT",
                 body: formData,
@@ -449,7 +451,8 @@ export default function VendorPage() {
         if (jsonResponse?.success) {
             return jsonResponse.data
         } else {
-            alert(response?.message + "/nPlease contact the admin and you can take this screenshot to share with team");
+            alert(jsonResponse?.message + "/nPlease contact the admin and you can take this screenshot to share with team");
+            console.error(jsonResponse);
             return null;
         }
     };
@@ -688,7 +691,7 @@ export default function VendorPage() {
     else
         return (
             <div className="vendor-main-container">
-                {window.location.pathname === "/admin/vendor-registration" && (
+                {isLocalVendorRegistration && (
                     <Link to="/admin">
                         <IconButton
                             edge="start"

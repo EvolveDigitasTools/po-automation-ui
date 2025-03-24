@@ -5,7 +5,6 @@ import {
     defer,
 } from "react-router-dom";
 import Main from "./components/main/Main";
-import VendorRegistration from "./components/main/vendorRegistration/VendorRegistration";
 import AddSKUs from "./components/main/addSKUs/AddSKUs";
 import AddBuyingOrder from "./components/main/addBuyingOrder/AddBuyingOrder";
 import HomeLayout from "./components/layouts/HomeLayout";
@@ -60,7 +59,7 @@ export const router = createBrowserRouter(
                         <Route path="" element={<Main />} />
                         <Route
                             path="vendor-registration"
-                            element={<VendorRegistration />}
+                            element={<VendorPage />}
                         />
                         <Route path="po-records" element={<PORecords />} />
                         <Route path="po-records/:poCode" element={<Reconcillation />} />

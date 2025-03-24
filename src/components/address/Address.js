@@ -126,7 +126,7 @@ export default function Address({ value, onChange, editMode }) {
                     }
                 />
             </Grid>
-            {(value.addressLine2 || !editMode) && <Grid item xs={12}>
+            {(value.addressLine2 || editMode) && <Grid item xs={12}>
                 <TextField
                     InputProps={{
                         readOnly: editMode ? false : true,
