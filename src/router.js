@@ -8,7 +8,6 @@ import Main from "./components/main/Main";
 import AddSKUs from "./components/main/addSKUs/AddSKUs";
 import AddBuyingOrder from "./components/main/addBuyingOrder/AddBuyingOrder";
 import HomeLayout from "./components/layouts/HomeLayout";
-import VendorDetails from "./components/main/vendorDetails/VendorDetails";
 import { AuthLayer } from "./components/auth/AuthLayer";
 import AuthLayout from "./components/auth/AuthLayout";
 import Login from "./components/Login/Login";
@@ -73,7 +72,7 @@ export const router = createBrowserRouter(
                         />
                         <Route
                             path="vendor/:vendorCode"
-                            element={<VendorDetails />}
+                            element={<VendorPage />}
                         />
                     </Route>
                 </Route>

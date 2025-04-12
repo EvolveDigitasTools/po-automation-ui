@@ -109,7 +109,7 @@ export default function DynamicFields({
         );
     else
         return fields.map((field, index) => (
-            <Fragment>
+            <Fragment key={index}>
                 <Grid item xs={6}>
                     <TextField
                         label={field.key}

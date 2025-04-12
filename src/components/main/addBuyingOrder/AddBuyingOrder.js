@@ -3,8 +3,10 @@ import ExcelJS from "exceljs";
 import {
     Autocomplete,
     Button,
+    Checkbox,
     CircularProgress,
     Container,
+    FormControlLabel,
     Grid,
     IconButton,
     Paper,
@@ -46,10 +48,15 @@ export default function AddBuyingOrder() {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [isPOSubmitted, setPOSubmitted] = useState(false);
-    const [createdBy, setCreatedBy] = useState(null);
-    
+    const [createdBy, setCreatedBy] = useState("");
+    const [isManualPO, setIsManualPO] = useState(false);
+
+    // if(previewLoading) {
+    //     setPreviewLoading(false);
+    // }
+
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_SERVER_URL}vendor/all`)
+        fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/all`)
             .then((response) => response.json())
             .then((res) => {
                 setVendors(res.data.vendors);
@@ -60,7 +67,7 @@ export default function AddBuyingOrder() {
                 // Handle the error
             });
         if (vendorCode !== "new")
-            fetch(`${process.env.REACT_APP_SERVER_URL}vendor/${vendorCode}`)
+            fetch(`${process.env.REACT_APP_SERVER_URL}/vendor/${vendorCode}`)
                 .then((response) => response.json())
                 .then((res) => {
                     setVendor(res.data.vendor);
@@ -71,7 +78,7 @@ export default function AddBuyingOrder() {
                     // Handle the error
                 });
 
-        const poCodeUrl = `${process.env.REACT_APP_SERVER_URL}buying-order/`;
+        const poCodeUrl = `${process.env.REACT_APP_SERVER_URL}/purchase-order/`;
         fetch(poCodeUrl)
             .then((response) => response.json())
             .then((res) => {
@@ -87,7 +94,7 @@ export default function AddBuyingOrder() {
     const updateVendor = async (newVendor) => {
         if (newVendor?.vendorCode)
             fetch(
-                `${process.env.REACT_APP_SERVER_URL}vendor/${newVendor.vendorCode}`
+                `${process.env.REACT_APP_SERVER_URL}/vendor/${newVendor.vendorCode}`
             )
                 .then((response) => response.json())
                 .then((res) => {
@@ -167,14 +174,14 @@ export default function AddBuyingOrder() {
         formData.append("poAttachment", excelFile);
 
         const response = await fetch(
-            `${process.env.REACT_APP_SERVER_URL}buying-order/new`,
+            `${process.env.REACT_APP_SERVER_URL}/purchase-order/new`,
             {
                 method: "POST",
                 body: formData,
             }
         );
-        const newBO = await response.json();
-        if (newBO.success) {
+        const newPO = await response.json();
+        if (newPO.success) {
             setPOSubmitted(true);
         } else {
             alert("Some error occurred. Please contact the tech team");
@@ -329,30 +336,6 @@ export default function AddBuyingOrder() {
                         />
                     </Grid>
                     <Grid item xs={6}>
-                        <TextField
-                            id="country"
-                            label="Country"
-                            value={vendor ? vendor.address.country : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                            size="small"
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
-                        <TextField
-                            id="state"
-                            label="State"
-                            value={vendor ? vendor.address.state : ""}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            fullWidth
-                            size="small"
-                        />
-                    </Grid>
-                    <Grid item xs={6}>
                         <Autocomplete
                             required
                             disablePortal
@@ -374,6 +357,29 @@ export default function AddBuyingOrder() {
                             size="small"
                             onChange={(e, newValue) => setCurrency(newValue)}
                         />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    color="primary"
+                                    onChange={(e) =>
+                                        setIsManualPO(e.target.checked)
+                                    }
+                                />
+                            }
+                            label="Is this a manual PO?"
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        {isManualPO && <TextField
+                            id="po-code"
+                            label="PO Code"
+                            value={poCode}
+                            onChange={(e) => setPOCode(e.target.value)}
+                            fullWidth
+                            size="small"
+                        />}
                     </Grid>
                     <Grid item xs={6}>
                         <TextField

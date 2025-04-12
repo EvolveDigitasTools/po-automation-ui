@@ -322,16 +322,20 @@ export default function VendorPage() {
     // ComponentDidMount
     useEffect(() => {
         const urlParts = location.pathname.split("/");
-        const mode = urlParts[1];
-        modeSetup(mode);
-        if(urlParts[1] === "admin")
+        let mode = urlParts[1], vendorCode;
+        if(urlParts[1] === "admin" && urlParts[2] === "vendor"){
+            mode = "view-vendor";
+            vendorCode = urlParts[3];
+        }
+        modeSetup(mode, vendorCode);
+        if(urlParts[1] === "admin" && urlParts[2] === "vendor-registration")
             setLocalVendorRegistration(true);
     }, []);
 
-    const modeSetup = async (mode) => {
-        if (["review-vendor", "update-vendor"].includes(mode)) {
+    const modeSetup = async (mode, paramVendorCode) => {
+        if (["review-vendor", "update-vendor", "view-vendor"].includes(mode)) {
             setProcessStage("loading");
-            const vendorCode = getVendorCodeFromValidateToken(params);
+            const vendorCode = paramVendorCode ?? getVendorCodeFromValidateToken(params);
             const vendor = await getVendorDetails(vendorCode);
 
             const vendorUpdate = vendorData;

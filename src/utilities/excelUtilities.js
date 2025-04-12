@@ -179,7 +179,7 @@ export const getPOBuffer = async (
                 vendor.address?.addressLine2
                     ? vendor.address.addressLine2 + ", "
                     : ""
-            }${vendor.address.city}, ${vendor.address.state}-${
+            }${vendor.address.city.name}, ${vendor.address.state.name}-${
                 vendor.address.postalCode
             }`,
             "",
@@ -192,7 +192,7 @@ export const getPOBuffer = async (
             "",
             "Contact Person :",
             "",
-            vendor.contactPerson.name,
+            vendor.contactPersonName,
             "",
             "",
             "",
@@ -203,7 +203,7 @@ export const getPOBuffer = async (
             "",
             "Contact No :",
             "",
-            Number(vendor.contactPerson.phoneNumber),
+            Number(vendor.contactPersonPhone),
             "",
             "",
             "",
@@ -225,7 +225,7 @@ export const getPOBuffer = async (
             "",
             "GST No:",
             "",
-            vendor.gst,
+            vendor.gstId,
             "",
             "",
             "",
@@ -236,7 +236,7 @@ export const getPOBuffer = async (
             "",
             "State Name and Code:",
             "",
-            vendor.address.state,
+            vendor.address.state.name,
             "",
             "",
             "",
@@ -263,7 +263,7 @@ export const getPOBuffer = async (
             "",
             "",
             "Ship To :",
-            "Shree Maruti Courier Pvt. Ltd O/B Ansan Technology Pvt Ltd.\nPlot no. 25-5/2, Rao giriraj Singh  Retail Park Opp. Om logistics Near  Iffco chowk Sec. 18 Gurgaon, HR-122015",
+            "Pluugin Ecommerce and Retail Private Limited\nG-48, Sector-6, Noida,Gautam Buddha Nagar UP-201301",
         ],
         [
             "",
@@ -271,11 +271,9 @@ export const getPOBuffer = async (
             "SKU",
             "Product Title",
             "EAN",
-            "Model Number",
             "Category",
             "Brand",
             "Size",
-            "Color Family-Color",
             "Qty",
             "Unit Rate",
             "IGST Rate",
@@ -321,13 +319,11 @@ export const getPOBuffer = async (
             "",
             i + 1,
             records[i].skuCode,
-            skus[records[i].skuCode].productTitle,
+            skus[records[i].skuCode].name,
             Number(skus[records[i].skuCode].ean),
-            skus[records[i].skuCode].modelNumber,
-            skus[records[i].skuCode].category,
-            skus[records[i].skuCode].brand,
-            skus[records[i].skuCode].size,
-            skus[records[i].skuCode].colorFamilyColor,
+            skus[records[i].skuCode].details.category,
+            vendor.brandName,
+            skus[records[i].skuCode].details.dimensions.size,
             records[i].expectedQty,
             records[i].unitCost,
             isInterState ? records[i].gst / 100 : 0,
@@ -432,7 +428,7 @@ export const getPOBuffer = async (
             "",
             "Requested by :",
             "",
-            vendor.contactPerson.email,
+            vendor.contactPersonEmail,
             "",
             "",
             "",
@@ -520,7 +516,7 @@ export const getPOBuffer = async (
     });
 
     const columnWidths = [
-        6.36, 16.82, 35.55, 14.91, 14.82, 9.09, 18.64, 7.09, 16.09, 6.55, 8.36,
+        6.36, 21.22, 35.55, 14.91, 9.09, 18.64, 7.09, 6.55, 8.36,
         6.55, 7.18, 7.36, 7.64, 8.55, 8.55, 9.36,
     ];
     const rowStartHeights = [

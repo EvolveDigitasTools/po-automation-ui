@@ -24,9 +24,10 @@ export const skuFields = [
 
 export const boFields = [
     { label: "SKU Code*", key: "skuCode" },
-    { label: "expected_qty*", key: "expectedQty" },
-    { label: "unit_cost*", key: "unitCost" },
-    { label: "GST_%*", key: "gst" },
+    { label: "Expected Quantity*", key: "expectedQty" },
+    { label: "MRP", key: "mrp" },
+    { label: "Unit Cost*", key: "unitCost" },
+    { label: "GST(%)*", key: "gst" },
 ];
 
 export const reconcillationFields = [
