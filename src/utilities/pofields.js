@@ -3,7 +3,7 @@ export const skuFields = [
     { label: "Category", key: "category", required: true },
     { label: "Sub Category", key: "subCategory" },
     { label: "Product Title", key: "productTitle", required: true, charLimit: 255 },
-    { label: "SAP Code", key: "sapCode", type: "number", apiType: "string" },
+    { label: "SAP Code", key: "sapCode", apiType: "string" },
     { label: "HSN", key: "hsn", type: "number" },
     { label: "EAN", key: "ean", type: "number" },
     { label: "Model Number", key: "modelNumber" },
